@@ -1,0 +1,272 @@
+﻿using System;
+using UnityEngine;
+using UnityEngine.UI;
+using System.Collections;
+using System.Collections.Generic;
+
+public class MapScene : MonoBehaviour
+{
+    Sprite mapImage;
+    private float intervalTime = 0.0f;
+    private int width = 640;
+    private int height = 640;
+    private double longitude;
+    private double latitude;
+    private double longitudeMap;
+    private double latitudeMap;
+    private int zoom = 16;
+    private float targetX=0;
+    private float targetY=0;
+    List<string> mapData=new List<string>();
+    private bool sceneChange = false;
+    GameObject mapImageObj;
+    public GameObject objIvent;
+    GameObject objBGM;
+    List<GameObject> objIB = new List<GameObject>();
+    GameObject parentObject;
+    public int selectNum = -1;
+    string _FILE_HEADER;
+    InputField[] inputField=new InputField[12];
+    public GameObject objCCB;
+
+    void Start()
+    {
+        for (int i = 0; i < 12; i++) { inputField[i] = GameObject.Find("InputField" + i.ToString()).GetComponent<InputField>(); }
+        parentObject = GameObject.Find("Content");
+        _FILE_HEADER = PlayerPrefs.GetString("進行中シナリオ","");                      //ファイル場所の頭
+        longitude=PlayerPrefs.GetFloat("longitude",135.768738f); latitude = PlayerPrefs.GetFloat("latitude", 35.010348f);
+        mapImageObj = GameObject.Find("mapImage").gameObject as GameObject;
+        objBGM= GameObject.Find("BGMManager").gameObject as GameObject;
+        LoadMapData("mapdata.txt");
+        GetMap();
+    }
+
+    void Update()
+    {
+    }
+
+    public void GetMap()
+    {
+        //マップを取得
+        StartCoroutine(GetStreetViewImage(latitude, longitude, zoom));
+    }
+
+
+    private IEnumerator GetStreetViewImage(double latitude, double longitude, double zoom)
+    {
+        string url="";
+        if (Application.platform == RuntimePlatform.IPhonePlayer) { url = "http://maps.googleapis.com/maps/api/staticmap?center=" + latitude + "," + longitude + "&zoom=" + zoom + "&size=" + width + "x" + height + Secret.SecretString.iPhoneKey; }
+        if (Application.platform == RuntimePlatform.Android) { url = "http://maps.googleapis.com/maps/api/staticmap?center=" + latitude + "," + longitude + "&zoom=" + zoom + "&size=" + width + "x" + height + Secret.SecretString.androidKey; }
+        if(Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer) { url = "http://maps.googleapis.com/maps/api/staticmap?center=" + latitude + "," + longitude + "&zoom=" + zoom + "&size=" + width + "x" + height + Secret.SecretString.androidKey; ; }
+        WWW www = new WWW(url);
+        yield return www;
+        //マップの画像をTextureからspriteに変換して貼り付ける
+        mapImage = Sprite.Create(www.texture, new Rect(0, 0, 640, 640), Vector2.zero);
+        mapImageObj.GetComponent<Image>().sprite=mapImage;
+
+        //地図の中心の緯度経度を保存
+        longitudeMap = longitude;
+        latitudeMap = latitude;
+
+        //targetの位置を中心に
+        targetX = 0;targetY = 0;
+    }
+
+    //目次ファイルを読み込む。
+    private void LoadMapData(string path)
+    {
+        try
+        {
+        //閲覧するエントリ
+        string extractFile = path;
+
+        //ZipFileオブジェクトの作成
+        ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+            new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ",""));
+        zf.Password = Secret.SecretString.zipPass;
+        //展開するエントリを探す
+        ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(extractFile);
+
+            try
+            {
+                if (ze != null)
+                {
+                    //閲覧するZIPエントリのStreamを取得
+                    System.IO.Stream reader = zf.GetInputStream(ze);
+                    //文字コードを指定してStreamReaderを作成
+                    System.IO.StreamReader sr = new System.IO.StreamReader(
+                        reader, System.Text.Encoding.GetEncoding("UTF-8"));
+                    // テキストを取り出す
+                    string text = sr.ReadToEnd();
+
+                    // 読み込んだ目次テキストファイルからstring配列を作成する
+                    mapData.AddRange(text.Split('\n'));
+                    //閉じる
+                    sr.Close();
+                    reader.Close();
+                    mapData.RemoveAt(mapData.Count - 1);//最終行は[END]なので除去。
+                    //イベントをボタンとして一覧に放り込む。
+                    for (int i = 0; i < mapData.Count; i++)
+                    {
+                        objIB.Add(Instantiate(objIvent) as GameObject);
+                        objIB[i].transform.SetParent(parentObject.transform, false);
+                        objIB[i].GetComponentInChildren<Text>().text = MapDataToButton(mapData[i]);
+                        objIB[i].GetComponent<IventButton>().buttonNum = i;
+                    }
+                }
+                else
+                {
+                    GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
+                }
+            }
+            catch{ }
+        //閉じる
+        zf.Close();
+        }
+        catch
+        {
+            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
+        }
+    }
+
+    public void IventAddButton()
+    {
+        //追加ボタンが押されたらイベントボタンを追加する。
+        if (selectNum >= 0)
+        {
+            objIB.Insert(selectNum, Instantiate(objIvent) as GameObject);
+            objIB[selectNum].transform.SetParent(parentObject.transform, false);
+            objIB[selectNum].GetComponent<IventButton>().buttonNum = selectNum;
+            objIB[selectNum].GetComponent<Transform>().SetSiblingIndex(selectNum);
+            for (int i = selectNum+1; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum++; }//追加分の後ろはボタン番号が１増える。
+        }
+        if (selectNum == -1)//選択されたイベントがなければ末尾に追加
+        {
+            objIB.Insert(objIB.Count, Instantiate(objIvent) as GameObject);
+            objIB[objIB.Count-1].transform.SetParent(parentObject.transform, false);
+            objIB[objIB.Count-1].GetComponent<IventButton>().buttonNum = objIB.Count-1;
+        }
+    }
+
+    public void IventDeleteButton()
+    {
+        if (selectNum >= 0)
+        {
+            Destroy(objIB[selectNum]);
+            objIB.RemoveAt(selectNum);
+            for (int i = selectNum; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum--; }//削除分の後ろはボタン番号が１減る。
+            mapData.RemoveAt(selectNum);
+            selectNum = -1;
+        }
+    }
+
+    public void IventCreateButton()
+    {
+        string[] strs;
+        strs = mapData[selectNum].Replace("\r", "").Replace("\n", "").Split(',');
+        objBGM.GetComponent<BGMManager>().chapterName=strs[11];
+        GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "NovelScene");
+    }
+
+    public void SetIvent()
+    {
+        string[] strs;
+        try
+        {
+            strs = mapData[selectNum].Split(',');
+            inputField[0].text= strs[11].Substring(0,strs[11].Length-4);
+            inputField[1].text = strs[0];
+            inputField[2].text = strs[1];
+            inputField[3].text = strs[2];
+            inputField[4].text = strs[3];
+            inputField[5].text = strs[4];
+            inputField[6].text = strs[5];
+            inputField[7].text = strs[6];
+            inputField[8].text = strs[7];
+            inputField[9].text = strs[8];
+            inputField[10].text = strs[9];
+            inputField[11].text = strs[10];
+            latitude =Convert.ToDouble(strs[0]); longitude =Convert.ToDouble(strs[1]);
+        }
+        catch
+        {
+        }
+    }
+
+    //インプットフィールドの入力を受け取る関数
+    public void InputDecideButton()
+    {
+        if (selectNum >= 0)
+        {
+            if (mapData.Count <= selectNum){ for (int i = mapData.Count; i <= selectNum; i++) { mapData.Add(""); } }//mapDataの要素数をselectNumが越えたら配列の要素数を合わせて増やす。中身は空でOK。（イベント追加されるとmapData.Count以上の番号を持つイベントができるため）
+            mapData[selectNum] = inputField[1].text + "," + inputField[2].text + "," + inputField[3].text + "," + inputField[4].text + "," + inputField[5].text + "," + inputField[6].text + "," + inputField[7].text + "," + inputField[8].text + "," + inputField[9].text + "," + inputField[10].text + "," + inputField[11].text + "," + inputField[0].text + ".txt\n";
+            objIB[selectNum].GetComponentInChildren<Text>().text = MapDataToButton(mapData[selectNum]);
+        }
+    }
+
+    //mapDataをボタン表示用に成型する関数
+    public string MapDataToButton(string mapdata)
+    {
+        string[] strs;
+        try
+        {
+            strs = mapdata.Replace("\r", "").Replace("\n", "").Split(',');
+            if (strs[11].Length>4) { strs[11] = strs[11].Substring(0,strs[11].Length-4); }
+            if (strs[0].Length > 0) { strs[0] = " 緯:" + strs[0]; }
+            if (strs[1].Length > 0) { strs[1] = " 経:" + strs[1]; }
+            if (strs[2].Length > 0) { strs[2] = " " + strs[2] + "月"; }
+            if (strs[3].Length > 0) { strs[3] = strs[3] + "日"; }
+            if (strs[4].Length > 0) { strs[4] = strs[4] + "時"; }
+            if (strs[5].Length > 0) { strs[5] = strs[5] + "分"; }
+            if (strs[6].Length > 0) { strs[6] = "～" + strs[6] + "月"; }
+            if (strs[7].Length > 0) { strs[7] = strs[7] + "日"; }
+            if (strs[8].Length > 0) { strs[8] = strs[8] +"時"; }
+            if (strs[9].Length > 0) { strs[9] = strs[9] + "分"; }
+            if (strs[10].Length > 0) { strs[10] = " " + strs[10]; }
+            return strs[11] + strs[0] + strs[1] + strs[2] + strs[3] + strs[4] + strs[5] + strs[6] + strs[7] + strs[8] + strs[9] + strs[10];
+                }
+        catch
+        {
+            return "";
+        }
+    }
+
+    //mapdata.txtファイルを書き出す関数
+    public void MakeMapDataFile()
+    {
+        string str="";
+        //ZIP書庫のパス
+        string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
+        //書庫に追加するファイルのパス
+        string file = @GetComponent<Utility>().GetAppPath() + @"\" + "mapdata.txt";
+
+        //先にmapdata.txtを一時的に書き出しておく。
+        for (int i = 0; i < mapData.Count; i++) { if (mapData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str = str + mapData[i].Replace("\n","").Replace("\r","") + "\r\n"; }
+        str = str +"[END]";
+        System.IO.File.WriteAllText(file, str);
+        
+        //ZipFileオブジェクトの作成
+        ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+            new ICSharpCode.SharpZipLib.Zip.ZipFile(zipPath);
+        
+        //ZipFileの更新を開始
+        zf.BeginUpdate();
+
+        //ZIP内のエントリの名前を決定する 
+        string f = System.IO.Path.GetFileName(file);
+        //ZIP書庫に一時的に書きだしておいたファイルを追加する
+        zf.Add(file, f);
+
+        //ZipFileの更新をコミット
+        zf.CommitUpdate();
+        
+        //閉じる
+        zf.Close();
+        
+        //一時的に書きだしたmapdata.txtを消去する。
+        System.IO.File.Delete(file);
+    }
+
+}
+
+

@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: 482c194c7c59a5140af0f09e1dd24c17
+timeCreated: 1514528622
+licenseType: Free
+TrueTypeFontImporter:
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: Oradano-mincho-GSRR
+  fontNames:
+  - Oradano-mincho-GSRR
+  fallbackFontReferences: []
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
