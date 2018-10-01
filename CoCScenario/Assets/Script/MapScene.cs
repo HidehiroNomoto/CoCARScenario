@@ -112,6 +112,7 @@ public class MapScene : MonoBehaviour
                         objIB[i].transform.SetParent(parentObject.transform, false);
                         objIB[i].GetComponentInChildren<Text>().text = MapDataToButton(mapData[i]);
                         objIB[i].GetComponent<IventButton>().buttonNum = i;
+                        ScenarioFileCheck(i,zf);
                     }
                 }
                 else
@@ -201,6 +202,14 @@ public class MapScene : MonoBehaviour
             if (mapData.Count <= selectNum){ for (int i = mapData.Count; i <= selectNum; i++) { mapData.Add(""); } }//mapDataの要素数をselectNumが越えたら配列の要素数を合わせて増やす。中身は空でOK。（イベント追加されるとmapData.Count以上の番号を持つイベントができるため）
             mapData[selectNum] = inputField[1].text + "," + inputField[2].text + "," + inputField[3].text + "," + inputField[4].text + "," + inputField[5].text + "," + inputField[6].text + "," + inputField[7].text + "," + inputField[8].text + "," + inputField[9].text + "," + inputField[10].text + "," + inputField[11].text + "," + inputField[0].text + ".txt\n";
             objIB[selectNum].GetComponentInChildren<Text>().text = MapDataToButton(mapData[selectNum]);
+
+            //ファイルチェックして（未）をつける
+            //ZipFileオブジェクトの作成
+            ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+                new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
+            zf.Password = Secret.SecretString.zipPass;
+            ScenarioFileCheck(selectNum, zf);
+            zf.Close();
         }
     }
 
@@ -248,7 +257,7 @@ public class MapScene : MonoBehaviour
         //ZipFileオブジェクトの作成
         ICSharpCode.SharpZipLib.Zip.ZipFile zf =
             new ICSharpCode.SharpZipLib.Zip.ZipFile(zipPath);
-        
+        zf.Password = Secret.SecretString.zipPass;
         //ZipFileの更新を開始
         zf.BeginUpdate();
 
@@ -267,6 +276,23 @@ public class MapScene : MonoBehaviour
         System.IO.File.Delete(file);
     }
 
+    public void ScenarioFileCheck(int num, ICSharpCode.SharpZipLib.Zip.ZipFile zf)
+    {
+        string[] strs;
+        strs = mapData[num].Replace("\r", "").Replace("\n", "").Split(',');//strs[11]がシナリオパス
+        try
+        {
+            //展開するエントリを探す
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(strs[11]);
+
+            //参照先のファイルがあるか調べる。なかったら(未)をつける。
+            if (ze == null)
+            {
+                objIB[num].GetComponentInChildren<Text>().text = "(未)" + objIB[num].GetComponentInChildren<Text>().text;
+            }
+        }
+        catch { }
+    }
 }
 
 

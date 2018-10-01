@@ -78,7 +78,7 @@ Application.platform == RuntimePlatform.LinuxPlayer)
         //ZipFileオブジェクトの作成
         ICSharpCode.SharpZipLib.Zip.ZipFile zf =
             ICSharpCode.SharpZipLib.Zip.ZipFile.Create(zipPath);
-
+        zf.Password = Secret.SecretString.zipPass;
         //mapdataファイルだけ入れておく()
         zf.BeginUpdate();
         zf.Add(file, "mapdata.txt");
