@@ -79,8 +79,9 @@ namespace GracesGames.SimpleFileBrowser.Scripts
                     //フラグ情報の全消去（別シナリオのフラグが生きてると意図せぬバッティングなどバグの元）
                     //セーブデータを全部消す
                     PlayerPrefs.DeleteAll();
+
                     PlayerPrefs.SetString("進行中シナリオ",path);
-                    GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "MapScene");
+                    GameObject.Find("TitleManager").GetComponent<TitleManager>().pass2Obj.SetActive(true);
                 }
             }
         }

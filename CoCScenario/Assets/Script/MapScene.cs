@@ -37,7 +37,7 @@ public class MapScene : MonoBehaviour
         longitude=PlayerPrefs.GetFloat("longitude",135.768738f); latitude = PlayerPrefs.GetFloat("latitude", 35.010348f);
         mapImageObj = GameObject.Find("mapImage").gameObject as GameObject;
         objBGM= GameObject.Find("BGMManager").gameObject as GameObject;
-        LoadMapData("mapdata.txt");
+        LoadMapData("[system]mapdata.txt");
         GetMap();
     }
 
@@ -240,16 +240,16 @@ public class MapScene : MonoBehaviour
         }
     }
 
-    //mapdata.txtファイルを書き出す関数
+    //[system]mapdata.txtファイルを書き出す関数
     public void MakeMapDataFile()
     {
         string str="";
         //ZIP書庫のパス
         string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
         //書庫に追加するファイルのパス
-        string file = @GetComponent<Utility>().GetAppPath() + @"\" + "mapdata.txt";
+        string file = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]mapdata.txt";
 
-        //先にmapdata.txtを一時的に書き出しておく。
+        //先に[system]mapdata.txtを一時的に書き出しておく。
         for (int i = 0; i < mapData.Count; i++) { if (mapData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str = str + mapData[i].Replace("\n","").Replace("\r","") + "\r\n"; }
         str = str +"[END]";
         System.IO.File.WriteAllText(file, str);
@@ -272,7 +272,7 @@ public class MapScene : MonoBehaviour
         //閉じる
         zf.Close();
         
-        //一時的に書きだしたmapdata.txtを消去する。
+        //一時的に書きだした[system]mapdata.txtを消去する。
         System.IO.File.Delete(file);
     }
 
