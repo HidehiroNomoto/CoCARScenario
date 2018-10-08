@@ -156,7 +156,7 @@ public class MapScene : MonoBehaviour
             Destroy(objIB[selectNum]);
             objIB.RemoveAt(selectNum);
             for (int i = selectNum; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum--; }//削除分の後ろはボタン番号が１減る。
-            mapData.RemoveAt(selectNum);
+            if (mapData.Count - 1 >= selectNum) { mapData.RemoveAt(selectNum); }
             selectNum = -1;
         }
     }
@@ -164,9 +164,12 @@ public class MapScene : MonoBehaviour
     public void IventCreateButton()
     {
         string[] strs;
-        strs = mapData[selectNum].Replace("\r", "").Replace("\n", "").Split(',');
-        objBGM.GetComponent<BGMManager>().chapterName=strs[11];
-        GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "NovelScene");
+        if (selectNum >= 0)
+        {
+            strs = mapData[selectNum].Replace("\r", "").Replace("\n", "").Split(',');
+            objBGM.GetComponent<BGMManager>().chapterName = strs[11];
+            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "NovelScene");
+        }
     }
 
     public void SetIvent()

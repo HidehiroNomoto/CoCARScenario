@@ -129,8 +129,8 @@ public class Utility : MonoBehaviour {
 
     public string GetAppPath()
     {
-        return System.IO.Path.GetDirectoryName(
-            System.Reflection.Assembly.GetExecutingAssembly().Location);
+        if (Application.platform == RuntimePlatform.WindowsEditor) { return @"C:\Users\hoto\Documents\GitHub\CoCARScenario\CoCScenario";}
+        return System.Windows.Forms.Application.StartupPath;
     }
 
     //URLへの遷移と、その前の演出等を見せるための待機をセットにしたコルーチン

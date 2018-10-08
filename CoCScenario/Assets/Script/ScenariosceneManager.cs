@@ -3,27 +3,30 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.IO;
+using System.Collections.Generic;
 
-
+//選択解除のボタン作る
+//画像音声は、選択したファイル名を横にテキスト表示
+//音声ファイルはクリックで鳴らす。
+//動作テスト
+//既作成コマンドを選択した際に、記入した状態でコマンド入力欄を開く(デバッグである程度動くの確認できてからでOK)
+//画像サウンドデータの削除(デバッグである程度動くの確認できてからでOK)
+//分岐コマンドを置くと、そのコマンドオブジェクトが子として分岐先の横に→オブジェクトを持つ（後でやる）
 public class ScenariosceneManager : MonoBehaviour
 {
     const int STATUSNUM = 12;
     const int SKILLNUM = 54;
     public string[] scenarioText = new string[100];          //シナリオテキスト保存変数
-    public AudioClip[] scenarioAudio = new AudioClip[40];    //シナリオＢＧＭ・ＳＥ保存変数
     public Sprite[] scenarioGraphic = new Sprite[100];       //シナリオ画像保存変数
     public string[] scenarioFilePath = new string[100];      //シナリオ用ファイルのアドレス
-    public bool sentenceEnd=false;                           //文の処理が終了したか否か
-    public int battleFlag=-1;
+    public AudioClip[] scenarioAudio = new AudioClip[40];    //シナリオＢＧＭ・ＳＥ保存変数
+    public Sprite batten;
     private string sectionName = "";
-    GameObject obj;
     GameObject objText;
     GameObject objTextBox;
     GameObject[] objCharacter = new GameObject[5];
     GameObject objBackImage;
     GameObject objBackText;
-    GameObject objItem;
-    GameObject objCanvas;
     GameObject objRollText;
     GameObject objName;
     GameObject objBGM;
@@ -31,50 +34,50 @@ public class ScenariosceneManager : MonoBehaviour
     GameObject[] objBox=new GameObject[4];
     GameObject objInput;
     GameObject objSkip;
-    public AudioClip[] systemAudio = new AudioClip[10];
-    public Sprite[] moveDice10Graphic = new Sprite[7];
-    public Sprite[] dice10Graphic = new Sprite[10];
-    public Sprite[] moveDice6Graphic = new Sprite[8];
-    public Sprite[] dice6Graphic = new Sprite[6];
-    public Sprite[] moveDice4Graphic = new Sprite[7];
-    public Sprite[] dice4Graphic = new Sprite[4];
-    public bool skipFlag = false;
-    public bool skipFlag2 = false;
+    List<GameObject> objCB = new List<GameObject>();
+    List<GameObject> objGS = new List<GameObject>();
+    List<string> commandData = new List<string>();
+    List<string> gFileName = new List<string>();
+    List<string> sFileName = new List<string>();
+    public GameObject[] objMake = new GameObject[25];
     public bool backLogCSFlag = false;
-    public int selectNum=1;
+    public int selectNum=-1;
+    private string commandName;
     private int logNum=0;
     string _FILE_HEADER;
     const int CHARACTER_Y = -300;
+    const int BUTTON_NUM = 25;
+    //public GameObject objIvent;
+    public GameObject objCommand;
+    public GameObject parentObject;
+    public GameObject objGSB;
+    public GameObject objCCB;
+    private GameObject parentGS;
+    public GameObject objGraSou;
+    public int GSButton=-1;
+    public int selectGS = -1;
+    List<string> backFileLog = new List<string>();
+    private int commandFileNum = 0;
 
     // Use this for initialization
     void Start()
     {
         _FILE_HEADER = PlayerPrefs.GetString("進行中シナリオ", "");                      //ファイル場所の頭
         if (_FILE_HEADER == null || _FILE_HEADER == "") {  GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene"); }
-        logNum = PlayerPrefs.GetInt("最新ログ番号", 0);
-        objSkip = GameObject.Find("SkipText").gameObject as GameObject;
-        if (PlayerPrefs.GetInt("skipFlag", 0) == 1) { skipFlag = true; objSkip.GetComponent<Text>().text = "<color=red>既読Skip\n<ON></color>"; }
-        systemAudio[0] = Resources.Load<AudioClip>("kan"); systemAudio[1] = Resources.Load<AudioClip>("correct1");
-        systemAudio[2] = Resources.Load<AudioClip>("incorrect1"); systemAudio[3] = Resources.Load<AudioClip>("switch1");
-        systemAudio[4] = Resources.Load<AudioClip>("gun1"); systemAudio[5] = Resources.Load<AudioClip>("punch-high1");
-        systemAudio[6] = Resources.Load<AudioClip>("sword-slash5"); systemAudio[7] = Resources.Load<AudioClip>("punch-swing1");
-        systemAudio[8] = Resources.Load<AudioClip>("highspeed-movement1"); systemAudio[9] = Resources.Load<AudioClip>("sword-clash4");
         objName = GameObject.Find("CharacterName").gameObject as GameObject;
         objRollText = GameObject.Find("Rolltext").gameObject as GameObject; objRollText.gameObject.SetActive(false);
-        obj = GameObject.Find("error").gameObject as GameObject;
         for (int i = 0; i < 5; i++) { objCharacter[i] = GameObject.Find("Chara" + (i + 1).ToString()).gameObject as GameObject; objCharacter[i].gameObject.SetActive(false); }
         objInput= GameObject.Find("Input").gameObject as GameObject; objInput.gameObject.SetActive(false);
         objText = GameObject.Find("MainText").gameObject as GameObject;
         objTextBox = GameObject.Find("TextBox").gameObject as GameObject;
         objBackImage = GameObject.Find("BackImage").gameObject as GameObject;
         objBackText = GameObject.Find("BackText").gameObject as GameObject; objBackText.gameObject.SetActive(false);
-        objItem = GameObject.Find("Item").gameObject as GameObject; objItem.gameObject.SetActive(false);
-        objCanvas = GameObject.Find("CanvasDraw").gameObject as GameObject;
         objBGM = GameObject.Find("BGMManager").gameObject as GameObject;
         for (int i = 0; i < 4; i++) { objBox[i] = GameObject.Find("select" + (i + 1).ToString()).gameObject as GameObject; objBox[i].gameObject.SetActive(false); }
         for (int i = 0; i < 2; i++) { objDice[i] = GameObject.Find("Dice" + (i + 1).ToString()).gameObject as GameObject; objDice[i].gameObject.SetActive(false); }
-        StartCoroutine(LoadPlayerChara(PlayerPrefs.GetString("CharacterIllustPath", "")));
-        StartCoroutine(MainCoroutine());
+        ReadCommandFileNum(@GetComponent<Utility>().GetAppPath() + @"\" + "[system]commandFileNum.txt");
+        commandName = "[system]command1" + objBGM.GetComponent<BGMManager>().chapterName;
+        StartScene();
     }
 
 
@@ -84,123 +87,575 @@ public class ScenariosceneManager : MonoBehaviour
 
     }
 
-
-    //ノベルゲーム処理
-    private IEnumerator NovelGame()
+    private void ReadCommandFileNum(string path)
     {
-        string[] buttonText = new string[4];
-        string[] battleText = new string[13];
-        string[] separateText = new string[2];
-        string[] separate3Text = new string[3];
-        DateTime dt;
-        for (int i = 1; i < 100; i++)
+        List<string> texts = new List<string>();
+        try
         {
-            for (int j = 0; j < 4; j++) { buttonText[j] = null; }
-            sentenceEnd = false;
-            if (scenarioText[i] == "[END]") { break; }
-            if (scenarioText[i].Length > 5 && scenarioText[i].Substring(0, 5) == "Text:") { separateText = scenarioText[i].Substring(5).Split(','); TextDraw(separateText[0], separateText[1]);if (PlayerPrefs.GetInt(sectionName + i.ToString(), 0)==1) { skipFlag2 = true; } StartCoroutine(PushWait());PlayerPrefs.SetInt(sectionName + i.ToString(),1);if (skipFlag2 == false) {   PlayerPrefs.SetString("バックログ" + logNum.ToString(), scenarioText[i].Substring(5).Replace(',', ':')); logNum++; if (logNum >= 1000) { logNum = 0; } PlayerPrefs.SetInt("最新ログ番号", logNum); } skipFlag2 = false; }
-            if (scenarioText[i].Length > 9 && scenarioText[i].Substring(0, 9) == "BackText:") { BackTextDraw(scenarioText[i].Substring(9)); if (PlayerPrefs.GetInt(sectionName + i.ToString(), 0) == 1) { skipFlag2 = true; } StartCoroutine(PushWait());  PlayerPrefs.SetInt(sectionName + i.ToString(), 1);if (skipFlag2 == false) {  PlayerPrefs.SetString("バックログ" + logNum.ToString(), scenarioText[i].Substring(9).Replace(',', ':')); logNum++; if (logNum >= 1000) { logNum = 0; } PlayerPrefs.SetInt("最新ログ番号", logNum); } skipFlag2 = false; }
-            if (scenarioText[i].Length > 5 && scenarioText[i].Substring(0, 5) == "Back:") { BackDraw(int.Parse(scenarioText[i].Substring(5))); sentenceEnd = true; }
-            if (scenarioText[i].Length > 4 && scenarioText[i].Substring(0, 4) == "BGM:") { BGMIn(int.Parse(scenarioText[i].Substring(4, 4))); BGMPlay(int.Parse(scenarioText[i].Substring(9))); sentenceEnd = true; }
-            if (scenarioText[i].Length > 7 && scenarioText[i].Substring(0, 7) == "BGMStop") { BGMOut(int.Parse(scenarioText[i].Substring(8, 4))); sentenceEnd = true; }
-            if (scenarioText[i].Length > 3 && scenarioText[i].Substring(0, 3) == "SE:") { SEPlay(int.Parse(scenarioText[i].Substring(3))); sentenceEnd = true; }
-            if (scenarioText[i].Length > 9 && scenarioText[i].Substring(0, 5) == "Chara") { CharacterDraw(int.Parse(scenarioText[i].Substring(9)), int.Parse(scenarioText[i].Substring(5, 1))); StartCoroutine(CharacterMove(int.Parse(scenarioText[i].Substring(5, 1)), scenarioText[i].Substring(7, 1))); }//Chara2ならポジション2、Chara5ならポジション5...。:の後（6文字目以降）は立ち絵の指定
-            if (scenarioText[i].Length > 5 && scenarioText[i].Substring(0, 5) == "Item:") { ItemDraw(int.Parse(scenarioText[i].Substring(5))); sentenceEnd = true; }
-            if (scenarioText[i].Length > 5 && scenarioText[i].Substring(0, 5) == "Shake") { StartCoroutine(ShakeScreen()); }
-            if (scenarioText[i].Length > 5 && scenarioText[i].Substring(0, 5) == "Jump:") { StartCoroutine(CharacterJump(int.Parse(scenarioText[i].Substring(5, 1)))); }
-            if (scenarioText[i].Length > 7 && scenarioText[i].Substring(0, 7) == "Select:") { buttonText = scenarioText[i].Substring(7).Split(','); StartCoroutine(Select(buttonText[0], buttonText[1], buttonText[2], buttonText[3].Replace("\r", "").Replace("\n", ""),false)); while (sentenceEnd == false) { yield return null; }; SystemSEPlay(systemAudio[3]); i += selectNum; continue; }
-            if (scenarioText[i].Length > 9 && scenarioText[i].Substring(0, 9) == "NextFile:") { LoadFile(scenarioText[i].Substring(9).Replace("\r", "").Replace("\n", "")); i = 0; sentenceEnd = true; }
-            if (scenarioText[i].Length > 7 && scenarioText[i].Substring(0, 7) == "Hantei:") { separateText = scenarioText[i].Substring(7).Split(','); i += Hantei(separateText[0], int.Parse(separateText[1].Replace("\r", "").Replace("\n", ""))); while (sentenceEnd == false) { yield return null; }; sentenceEnd = false; StartCoroutine(PushWait()); }
-            if (scenarioText[i].Length > 7 && scenarioText[i].Substring(0, 7) == "Battle:") { battleText = scenarioText[i].Substring(7).Split(','); battleFlag = -1; StartCoroutine(Battle(int.Parse(battleText[0]), int.Parse(battleText[1]), int.Parse(battleText[2]), int.Parse(battleText[3]), int.Parse(battleText[4]), int.Parse(battleText[5]), int.Parse(battleText[6]),bool.Parse(battleText[7]), battleText[8], battleText[9], int.Parse(battleText[10]), int.Parse(battleText[11]), bool.Parse(battleText[12].Replace("\r", "").Replace("\n", "")))); while (battleFlag == -1) { yield return null; }; i += battleFlag;sentenceEnd = false; StartCoroutine(PushWait()); while (sentenceEnd == false) { yield return null; }continue; }
-            if (scenarioText[i].Length > 11 && scenarioText[i].Substring(0, 11) == "FlagBranch:") { i+=PlayerPrefs.GetInt(scenarioText[i].Substring(11).Replace("\r", "").Replace("\n", ""),0);continue; }
-            if (scenarioText[i].Length > 11 && scenarioText[i].Substring(0, 11) == "FlagChange:"){ separateText = scenarioText[i].Substring(11).Split(','); PlayerPrefs.SetInt(separateText[0],int.Parse(separateText[1].Replace("\r", "").Replace("\n", ""))); sentenceEnd = true; }
-            if (scenarioText[i].Length > 8 && scenarioText[i].Substring(0, 8) == "GetTime:"){ dt = DateTime.Now; PlayerPrefs.SetInt("Month", dt.Month); PlayerPrefs.SetInt("Day", dt.Day); PlayerPrefs.SetInt("Hour",dt.Hour); PlayerPrefs.SetInt("Minute", dt.Minute); sentenceEnd = true; }
-            if (scenarioText[i].Length > 9 && scenarioText[i].Substring(0, 9) == "FlagName:"){ separateText = scenarioText[i].Substring(9).Split(','); PlayerPrefs.SetInt(separateText[1].Replace("\r", "").Replace("\n", ""), PlayerPrefs.GetInt(separateText[0], 0)); sentenceEnd = true; }//フラグを別名で保存する
-            if (scenarioText[i].Length > 11 && scenarioText[i].Substring(0, 11) == "Difference:"){separate3Text = scenarioText[i].Substring(11).Split(',');i+=Difference(separate3Text);continue; }
-            if (scenarioText[i].Length > 13 && scenarioText[i].Substring(0, 13) == "StatusChange:"){separateText = scenarioText[i].Substring(13).Split(',');StartCoroutine(StatusChange(separateText));while (sentenceEnd == false) { yield return null; }; sentenceEnd = false; StartCoroutine(PushWait()); }//「StatusChange:正気度,-2D6」のように①変動ステータス、②変動値（○D○または固定値どちらでもプログラム側で適切な解釈をしてくれる）
-            if (scenarioText[i].Length > 6 && scenarioText[i].Substring(0, 6) == "Input:") { StartCoroutine(InputText(scenarioText[i].Substring(6).Replace("\r", "").Replace("\n", ""))); }
-            if (scenarioText[i].Length > 6 && scenarioText[i].Substring(0, 6) == "Equal:"){separateText = scenarioText[i].Substring(6).Split(',');if (PlayerPrefs.GetString(separateText[0],"").Contains(separateText[1].Replace("\r", "").Replace("\n", ""))) {i++; } continue; }
-            if (scenarioText[i].Length > 5 && scenarioText[i].Substring(0, 5) == "Lost:") { StartCoroutine(CharaLost()); }
-            if (scenarioText[i].Length > 10 && scenarioText[i].Substring(0, 10) == "FlagReset:") { FlagReset(); sentenceEnd = true; }
-            if (scenarioText[i].Length > 6 && scenarioText[i].Substring(0, 6) == "Title:") { GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene"); }
-            if (scenarioText[i].Length > 4 && scenarioText[i].Substring(0, 4) == "Map:") { if (scenarioText[i].Substring(4, 4) == "Once") { PlayerPrefs.SetInt(objBGM.GetComponent<BGMManager>().chapterName.Substring(0, objBGM.GetComponent<BGMManager>().chapterName.Length - 4) + "Flag", 1); } GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "MapScene"); }
-            while (sentenceEnd == false) { yield return null; }
-            objBackText.gameObject.SetActive(false);//背景テキストは出っ放しにならない
-            for (int k = 0; k < 2; k++) { objDice[k].gameObject.SetActive(false); }
-            objRollText.gameObject.SetActive(false);//ダイスは出っ放しにならない
+            //閲覧するエントリ
+            string extractFile = path;
+
+            //ZipFileオブジェクトの作成
+            ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+                new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
+            zf.Password = Secret.SecretString.zipPass;
+            //展開するエントリを探す
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(extractFile);
+
+            try
+            {
+                if (ze != null)
+                {
+                    //閲覧するZIPエントリのStreamを取得
+                    Stream reader = zf.GetInputStream(ze);
+                    //文字コードを指定してStreamReaderを作成
+                    StreamReader sr = new StreamReader(
+                        reader, System.Text.Encoding.GetEncoding("UTF-8"));
+                    // テキストを取り出す
+                    string text = sr.ReadToEnd();
+
+                    // 読み込んだ目次テキストファイルからstring配列を作成する
+                    texts.AddRange(text.Replace("\r", "").Split('\n'));
+                    commandFileNum= int.Parse(texts[0]);
+                    //閉じる
+                    sr.Close();
+                    reader.Close();
+                }
+            }
+            catch { }
+            //閉じる
+            zf.Close();
+        }
+        catch
+        {
+            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
         }
     }
 
-    //仕様上、既読フラグやバックログも一緒に消えるので注意。（キャラシは残る）
-    private void FlagReset()
+    private void SaveCommandFileNum()
     {
-        int[] status=new int[STATUSNUM];
-        int[] skills=new int[SKILLNUM];
-        string nowPlay;
-        //残す情報を一時避難
-        for(int i=0;i<STATUSNUM;i++)
-        {
-            status[i] = PlayerPrefs.GetInt("Status" + i.ToString(), 0);
-        }
-        for (int i = 0; i < SKILLNUM; i++)
-        {
-            skills[i] = PlayerPrefs.GetInt("Skill" + i.ToString(), 0);
-        }
-        nowPlay= PlayerPrefs.GetString("進行中シナリオ", "");
-        //セーブデータを全部消す
-        PlayerPrefs.DeleteAll();
-        //残す情報を再書き込み
-        for (int i = 0; i < STATUSNUM; i++)
-        {
-            PlayerPrefs.SetInt("Status" + i.ToString(), status[i]);
-        }
-        for (int i = 0; i < SKILLNUM; i++)
-        {
-            PlayerPrefs.SetInt("Skill" + i.ToString(), skills[i]);
-        }
-        logNum = 0;
-        PlayerPrefs.SetString("進行中シナリオ",nowPlay);
-        if (skipFlag == true) { PlayerPrefs.SetInt("skipFlag", 1); }
+        string str = commandFileNum.ToString();
+        //ZIP書庫のパス
+        string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
+        //書庫に追加するファイルのパス
+        string file = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]commandFileNum.txt";
+
+        //先にテキストファイルを一時的に書き出しておく。
+        File.WriteAllText(file, str);
+
+        //ZipFileオブジェクトの作成
+        ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+            new ICSharpCode.SharpZipLib.Zip.ZipFile(zipPath);
+        zf.Password = Secret.SecretString.zipPass;
+        //ZipFileの更新を開始
+        zf.BeginUpdate();
+
+        //ZIP内のエントリの名前を決定する 
+        string f = Path.GetFileName(file);
+        //ZIP書庫に一時的に書きだしておいたファイルを追加する
+        zf.Add(file, f);
+        //イベントファイルと画像サウンドファイルを追加
+        AddIventGS(zf);
+        //ZipFileの更新をコミット
+        zf.CommitUpdate();
+
+        //閉じる
+        zf.Close();
+
+        //一時的に書きだしたファイルを消去する。
+        File.Delete(file);
     }
 
-    private IEnumerator CharaLost()
+
+    public void CommandButton(int num)
     {
-        //ロスト状態キャラシを見せる
-        GameObject.Find("Button (2)").gameObject.GetComponent<CSManager>().CSButton();
-        GameObject.Find("Lost").gameObject.GetComponent<Text>().text= "-LOST-";
-        while (Input.GetMouseButtonDown(0) == false){ yield return null; }
-        //キャラクターデータを全て消し、タイトル画面に送り返す。
-        for (int i = 0; i < STATUSNUM; i++)
+        for (int i = 0; i < BUTTON_NUM; i++) { objMake[i].SetActive(false); }
+        objGS.Clear();
+        objMake[num].SetActive(true);
+        selectGS = -1;
+        parentGS = GameObject.Find("GSContents");
+        if (num == 2 || num==6 || num==7 || num==12)
         {
-            PlayerPrefs.SetInt("Status" + i.ToString(), 0);
+            for (int i = 0; i < scenarioGraphic.Length; i++)
+            {
+                if (scenarioGraphic[i] == null) { break; }
+                objGS.Insert(objGS.Count, Instantiate(objGraSou) as GameObject);
+                objGS[objGS.Count - 1].transform.SetParent(parentGS.transform, false);
+                objGS[objGS.Count - 1].GetComponent<GSButton>().buttonNum = objGS.Count - 1;
+                objGS[objGS.Count - 1].GetComponent<Image>().sprite= scenarioGraphic[i];
+            }
+            if (num == 6)
+            {
+                objGS.Insert(objGS.Count, Instantiate(objGraSou) as GameObject);
+                objGS[objGS.Count - 1].transform.SetParent(parentGS.transform, false);
+                objGS[objGS.Count - 1].GetComponent<Image>().sprite = batten;
+                objGS[objGS.Count - 1].GetComponent<GSButton>().buttonNum = - 1;
+            }//キャラ選択の場合、表示しないを選択したいことがある。それを×マークでフォロー。
         }
-        for (int i = 0; i < SKILLNUM; i++)
+        if (num == 3 || num==5)
         {
-            PlayerPrefs.SetInt("Skill" + i.ToString(), 0);
+            for (int i = 0; i < scenarioAudio.Length; i++)
+            {
+                if (scenarioAudio[i] == null) { break; }
+                objGS.Insert(objGS.Count, Instantiate(objGraSou) as GameObject);
+                objGS[objGS.Count - 1].transform.SetParent(parentGS.transform, false);
+                objGS[objGS.Count - 1].GetComponent<GSButton>().buttonNum = objGS.Count - 1;
+            }
         }
-        GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
     }
 
-    public void SkipButton()
+    //エクスプローラーのドラッグ＆ドロップ機能は使わない。
+    //Graphic,Soundフォルダを作り、そこにファイルを投入してもらう。
+
+    public void CommandDecide(int num)
     {
-        SkipButtonIn();
+        string commandText="";
+        if (num == 0) { commandText = "Text:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText").GetComponent<InputField>().text; }
+        if (num == 1) { commandText = "BackText:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text; }
+        if (num == 2) { if (selectGS == -1) { return; } commandText = "Back:" + selectGS.ToString(); }
+        if (num == 3) { if (selectGS == -1) { return; } commandText = "BGM:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text + ":" + selectGS.ToString() ; }
+        if (num == 4) { commandText = "BGMStop:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text; }
+        if (num == 5) { if (selectGS == -1) { return; } commandText = "SE:" + selectGS.ToString(); }
+        if (num == 6) { if (selectGS == -1) { return; } commandText = "Chara" + ((int)(GameObject.Find("Slider").GetComponent<Slider>().value)).ToString() + ":" + selectGS.ToString(); }
+        if (num == 7) { if (selectGS == -1) { return; } commandText = "Item:" + selectGS.ToString(); }
+        if (num == 8) { commandText = "Shake:"; }
+        if (num == 9) { commandText = "Jump:" + ((int)(GameObject.Find("Slider").GetComponent<Slider>().value)).ToString(); }
+        if (num == 10) { commandText = "Select:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
+        if (num == 11) { commandText="Hantei:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
+        if (num == 12) { if (selectGS == -1) { return; } commandText = "Battle:" + selectGS.ToString() + "," + GameObject.Find("Label1").GetComponent<Text>().text + "," + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text + "," + GameObject.Find("Label2").GetComponent<Text>().text + "," + GameObject.Find("Label3").GetComponent<Text>().text.Replace("D","") + "," + (GameObject.Find("Toggle1").GetComponent<Toggle>().isOn).ToString().ToLower() + "," + GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (6)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (8)").GetComponent<InputField>().text + "," + (GameObject.Find("Toggle2").GetComponent<Toggle>().isOn).ToString().ToLower(); }
+        if (num == 13) { commandText="FlagBranch:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
+        if (num == 14) { commandText = "FlagChange:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
+        if (num == 15) { commandText = "GetTime:"; }
+        if (num == 16) { commandText = "FlagName:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
+        if (num == 17) { commandText = "Difference:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text; }
+        if (num == 18) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { commandText = "StatusChange:" + GameObject.Find("Label1").GetComponent<Text>().text +"," + GameObject.Find("Label2").GetComponent<Text>().text + "," + GameObject.Find("Label3").GetComponent<Text>().text; } else { commandText = "StatusChange:" + GameObject.Find("Label1").GetComponent<Text>().text + "," + GameObject.Find("InputFieldText").GetComponent<InputField>().text; }  }
+        if (num == 19) { commandText = "Input:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text; }
+        if (num == 20) { commandText = "Equal:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
+        if (num == 21) { commandText = "Lost:"; }
+        if (num == 22) { commandText = "Title:"; }
+        if (num == 23) { commandText = "Map:" + (GameObject.Find("Toggle").GetComponent<Toggle>().isOn).ToString().ToLower(); }
+        if (num == 24) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { commandText = "NextFile:" + "[system]" + commandFileNum.ToString() + objBGM.GetComponent<BGMManager>().chapterName; } else { commandText = "NextFile:" + "[system]" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + objBGM.GetComponent<BGMManager>().chapterName; } }
+        if (selectNum >= 0)
+        {
+            if (commandData.Count <= selectNum) { for (int i = commandData.Count; i <= selectNum; i++) { commandData.Add(""); } }//commandDataの要素数をselectNumが越えたら配列の要素数を合わせて増やす。中身は空でOK。（イベント追加されるとcommandData.Count以上の番号を持つイベントができるため）
+            commandData[selectNum] = commandText;
+            objCB[selectNum].GetComponentInChildren<Text>().text = commandData[selectNum];
+        }
     }
 
-    private void SkipButtonIn()
+    private void StartScene()
     {
-        if (skipFlag == false)
+        List<string> tmp = LoadIventData(objBGM.GetComponent<BGMManager>().chapterName);
+        for (int i = 0; i < tmp.Count; i++)
         {
-            skipFlag = true;
-            PlayerPrefs.SetInt("skipFlag", 1);
-            objSkip.GetComponent<Text>().text = "<color=red>既読Skip\n<ON></color>";
+            ZipRead(tmp[i]);//zipにあるイベントに関連するpngやwavを読み込む。
         }
-        else
+        string[] files = Directory.GetFiles(@GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ", "*", SearchOption.AllDirectories);
+        for (int i = 0; i < files.Length; i++)
         {
-            skipFlag = false;
-            PlayerPrefs.SetInt("skipFlag", 0);
-            objSkip.GetComponent<Text>().text = "既読Skip\n<OFF>";
+            StartCoroutine(LoadFile(files[i],tmp));//素材フォルダのファイルを読み込む。
+        }
+        LoadCommandData("[system]command1" + objBGM.GetComponent<BGMManager>().chapterName);
+    }
+
+    private void ZipRead(string path)
+    {
+        int j;
+        byte[] buffer;
+        try
+        {
+            //ZipFileオブジェクトの作成
+            ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+                new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
+            zf.Password = Secret.SecretString.zipPass;
+
+            //閲覧するエントリ
+            string extractFile = path;
+            //展開するエントリを探す
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(extractFile);
+
+            if (ze != null)
+            {
+                //pngファイルの場合
+                if (path.Substring(path.Length - 4) == ".png")
+                {
+                    //閲覧するZIPエントリのStreamを取得
+                    Stream fs = zf.GetInputStream(ze);
+                    buffer = ReadBinaryData(fs);//bufferにbyte[]になったファイルを読み込み
+
+                    // 画像を取り出す
+                    //横サイズ
+                    int pos = 16;
+                    int width = 0;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        width = width * 256 + buffer[pos++];
+                    }
+                    //縦サイズ
+                    int height = 0;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        height = height * 256 + buffer[pos++];
+                    }
+                    //byteからTexture2D作成
+                    Texture2D texture = new Texture2D(width, height);
+                    texture.LoadImage(buffer);
+
+                    // 読み込んだ画像からSpriteを作成する
+                    for (j = 0; j < 100; j++) { if (scenarioGraphic[j] == null) { break; } }
+                    scenarioGraphic[j] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                    gFileName[j] = path;
+                    //閉じる
+                    fs.Close();
+                }
+
+                //wavファイルの場合
+                if (path.Substring(path.Length - 4) == ".wav")
+                {
+                    //閲覧するZIPエントリのStreamを取得
+                    Stream fs = zf.GetInputStream(ze);
+                    buffer = ReadBinaryData(fs);//bufferにbyte[]になったファイルを読み込み
+                    for (j = 0; j < 40; j++) { if (scenarioAudio[j] == null) { break; } }
+                    scenarioAudio[j] = WavUtility.ToAudioClip(buffer);
+                    sFileName[j] = path;
+                    //閉じる
+                    fs.Close();
+                }
+
+            }
+            zf.Close();
+        }
+        catch
+        {
+            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
         }
     }
+
+
+
+
+    //イベントデータを読みだして、ファイル名を返す。
+    private List<string> LoadIventData(string path)
+    {
+        List<string> texts = new List<string>();
+        try
+        {
+            //閲覧するエントリ
+            string extractFile = path;
+
+            //ZipFileオブジェクトの作成
+            ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+                new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
+            zf.Password = Secret.SecretString.zipPass;
+            //展開するエントリを探す
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(extractFile);
+
+            try
+            {
+                if (ze != null)
+                {
+                    //閲覧するZIPエントリのStreamを取得
+                    Stream reader = zf.GetInputStream(ze);
+                    //文字コードを指定してStreamReaderを作成
+                    StreamReader sr = new StreamReader(
+                        reader, System.Text.Encoding.GetEncoding("UTF-8"));
+                    // テキストを取り出す
+                    string text = sr.ReadToEnd();
+
+                    // 読み込んだ目次テキストファイルからstring配列を作成する
+                    texts.AddRange(text.Replace("\r","").Split('\n'));
+                    //閉じる
+                    sr.Close();
+                    reader.Close();
+                    texts.RemoveAt(texts.Count - 1);//最終行は[END]なので除去。
+                }
+            }
+            catch { }
+            //閉じる
+            zf.Close();
+        }
+        catch
+        {
+            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
+        }
+        return texts;
+    }
+    // ストリームからデータを読み込み、バイト配列に格納
+    static public byte[] ReadBinaryData(Stream st)
+    {
+        using (MemoryStream ms = new MemoryStream())
+        {
+            st.CopyTo(ms);
+            return ms.ToArray();
+        }
+    }
+
+
+
+
+
+
+    private IEnumerator LoadFile(string path,List<string> tmp)
+    {
+        int i;
+        int j;
+        bool k;
+
+        path = path.Replace("\n", "").Replace("\r","");
+        // 指定したファイルをロードする
+        WWW request = new WWW(path);
+
+        while (!request.isDone)
+        {
+            yield return new WaitForEndOfFrame();
+        }
+        //pngファイルの場合
+        if (path.Substring(path.Length - 4) == ".png")
+        {
+            // 画像を取り出す
+            Texture2D texture = request.texture;
+
+            // 読み込んだ画像からSpriteを作成する
+            for (i = 0; i < 100; i++) { if (scenarioGraphic[i] == null) { break; } }
+            k = true;
+            //同名ファイルが既にzipに入っていれば上書き
+            for (j = 0; j < tmp.Count; j++)
+            {
+                if (Path.GetFileName(@path) == tmp[j]) { i = j;gFileName[i] = path;k = false; break; }
+            }
+            if(k){ gFileName.Add(path); }
+            scenarioGraphic[i] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+        }
+
+        //wavファイルの場合
+        if (path.Substring(path.Length - 4) == ".wav")
+        {
+            yield return StartCoroutine(LoadBGM(request,tmp,path));
+        }
+        yield return null;
+    }
+
+    private IEnumerator LoadBGM(WWW request,List<string> tmp,string path)
+    {
+        int i;
+        bool k;
+        for (i = 0; i < 40; i++) { if (scenarioAudio[i] == null) { break; } }
+        k = true;
+        //同名ファイルが既にzipに入っていれば上書き
+        for (int j = 0; j < tmp.Count; j++)
+        {
+            if (Path.GetFileName(@path) == tmp[j]) { i = j; sFileName[i] = path;k = false; break; }
+        }
+        if(k){ sFileName.Add(path); }
+        scenarioAudio[i] = request.GetAudioClip(false, true);
+        while (scenarioAudio[i].loadState == AudioDataLoadState.Loading)
+        {
+            // ロードが終わるまで待つ
+            yield return new WaitForEndOfFrame();
+        }
+
+        if (scenarioAudio[i].loadState != AudioDataLoadState.Loaded)
+        {
+            // 読み込み失敗
+            Debug.Log("Failed to Load!");
+            yield break;
+        }
+    }
+
+    //コマンドファイルを読み込む。
+    private void LoadCommandData(string path)
+    {
+        commandData.Clear();
+        objCB.Clear();
+        try
+        {
+            //閲覧するエントリ
+            string extractFile = path;
+
+            //ZipFileオブジェクトの作成
+            ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+                new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
+            zf.Password = Secret.SecretString.zipPass;
+            try
+            {
+                //展開するエントリを探す
+                ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(extractFile);
+
+
+                if (ze != null)
+                {
+                    //閲覧するZIPエントリのStreamを取得
+                    Stream reader = zf.GetInputStream(ze);
+                    //文字コードを指定してStreamReaderを作成
+                    StreamReader sr = new StreamReader(
+                        reader, System.Text.Encoding.GetEncoding("UTF-8"));
+                    // テキストを取り出す
+                    string text = sr.ReadToEnd();
+
+                    // 読み込んだ目次テキストファイルからstring配列を作成する
+                    commandData.AddRange(text.Split('\n'));
+                    //閉じる
+                    sr.Close();
+                    reader.Close();
+                    commandData.RemoveAt(commandData.Count - 1);//最終行は[END]なので除去。
+                    //コマンドをボタンとして一覧に放り込む。
+                    for (int i = 0; i < commandData.Count; i++)
+                    {
+                        objCB.Add(Instantiate(objCommand) as GameObject);
+                        objCB[i].transform.SetParent(parentObject.transform, false);
+                        objCB[i].GetComponentInChildren<Text>().text = commandData[i];
+                        objCB[i].GetComponent<CommandButton>().buttonNum = i;
+                    }
+                }
+                else
+                {
+                    objCB.Add(Instantiate(objCommand) as GameObject);
+                    objCB[0].transform.SetParent(parentObject.transform, false);
+                }
+            }
+            catch { }
+            //閉じる
+            zf.Close();
+        }
+        catch
+        {
+            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
+        }
+    }
+
+    public void CommandAddButton()
+    {
+        //追加ボタンが押されたらコマンドボタンを追加する。
+        if (selectNum >= 0)
+        {
+            objCB.Insert(selectNum, Instantiate(objCommand) as GameObject);
+            objCB[selectNum].transform.SetParent(parentObject.transform, false);
+            objCB[selectNum].GetComponent<CommandButton>().buttonNum = selectNum;
+            objCB[selectNum].GetComponent<Transform>().SetSiblingIndex(selectNum);
+            for (int i = selectNum + 1; i < objCB.Count; i++) { objCB[i].GetComponent<CommandButton>().buttonNum++; }//追加分の後ろはボタン番号が１増える。
+        }
+        if (selectNum == -1)//選択されたコマンドがなければ末尾に追加
+        {
+            objCB.Insert(objCB.Count, Instantiate(objCommand) as GameObject);
+            objCB[objCB.Count - 1].transform.SetParent(parentObject.transform, false);
+            objCB[objCB.Count - 1].GetComponent<CommandButton>().buttonNum = objCB.Count - 1;
+        }
+    }
+
+    public void CommandDeleteButton()
+    {
+        if (selectNum >= 0)
+        {
+            Destroy(objCB[selectNum]);
+            objCB.RemoveAt(selectNum);
+            for (int i = selectNum; i < objCB.Count; i++) { objCB[i].GetComponent<CommandButton>().buttonNum--; }//削除分の後ろはボタン番号が１減る。
+            commandData.RemoveAt(selectNum);
+            selectNum = -1;
+        }
+    }
+
+    public void SetCommand()
+    {
+        string[] strs;
+        try
+        {
+            
+            strs = commandData[selectNum].Split(',');
+            /*
+            inputField[0].text = strs[11].Substring(0, strs[11].Length - 4);
+            inputField[1].text = strs[0];
+            inputField[2].text = strs[1];
+            inputField[3].text = strs[2];
+            inputField[4].text = strs[3];
+            inputField[5].text = strs[4];
+            inputField[6].text = strs[5];
+            inputField[7].text = strs[6];
+            inputField[8].text = strs[7];
+            inputField[9].text = strs[8];
+            inputField[10].text = strs[9];
+            inputField[11].text = strs[10];
+            */
+        }
+        catch
+        {
+        }
+    }
+
+    public void BackButton()
+    {
+        SaveCommandFile();
+        if (backFileLog.Count == 0) { GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "MapScene"); }
+        else { commandName = backFileLog[backFileLog.Count - 1]; backFileLog.RemoveAt(backFileLog.Count - 1); LoadCommandData(commandName);  }//一つ戻って、履歴からはそこを消す
+    }
+
+    public void NextFileButton()
+    {
+        string path;
+        commandFileNum++;
+        SaveCommandFileNum();
+        path = GameObject.Find("InputFieldNextPath").GetComponent<InputField>().text;
+        CommandDecide(24);//ネクストファイルの「決定」ボタンを押したのと同じ効果。
+        SaveCommandFile();
+        backFileLog.Add(commandName);//現在のコマンドファイル名をログに保存
+        commandName = "[system]" + path + objBGM.GetComponent<BGMManager>().chapterName;//次のファイルのコマンドファイル名に入れ替え
+        LoadCommandData(commandName);    
+    }
+
+    //コマンドファイルを書き出す関数
+    public void SaveCommandFile()
+    {
+        string str = "";
+        //ZIP書庫のパス
+        string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
+        //書庫に追加するファイルのパス
+        string file= @GetComponent<Utility>().GetAppPath() + @"\" + commandName;
+
+        //先にテキストファイルを一時的に書き出しておく。
+        for (int i = 0; i < commandData.Count; i++) { if (commandData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str = str + commandData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+        str = str + "[END]";
+        File.WriteAllText(file, str);
+
+        //ZipFileオブジェクトの作成
+        ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+            new ICSharpCode.SharpZipLib.Zip.ZipFile(zipPath);
+        zf.Password = Secret.SecretString.zipPass;
+        //ZipFileの更新を開始
+        zf.BeginUpdate();
+
+        //ZIP内のエントリの名前を決定する 
+        string f = Path.GetFileName(file);
+        //ZIP書庫に一時的に書きだしておいたファイルを追加する
+        zf.Add(file, f);
+        //イベントファイルと画像サウンドファイルを追加
+        AddIventGS(zf);
+        //ZipFileの更新をコミット
+        zf.CommitUpdate();
+
+        //閉じる
+        zf.Close();
+
+        //一時的に書きだしたファイルを消去する。
+        File.Delete(file);
+    }
+
+    private void AddIventGS(ICSharpCode.SharpZipLib.Zip.ZipFile zf)
+    {
+        //イベントファイルの作成
+        string str = "[system]command1" + objBGM.GetComponent<BGMManager>().chapterName;
+        //先にテキストファイルを一時的に書き出しておく。
+        for (int i = 0; i < gFileName.Count; i++) { if (gFileName[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str = str + gFileName[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+        for (int i = 0; i < sFileName.Count; i++) { if (sFileName[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str = str + sFileName[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+        str = str + "[END]";
+        File.WriteAllText(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName, str);
+        zf.Add(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName, Path.GetFileName(objBGM.GetComponent<BGMManager>().chapterName));
+        File.Delete(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName);
+
+        //画像サウンドファイルの作成
+        for (int i = 0; i < gFileName.Count; i++) { if (gFileName[i] != Path.GetFileName(gFileName[i])) { zf.Add(gFileName[i], Path.GetFileName(gFileName[i])); } }
+        for (int i = 0; i < sFileName.Count; i++) { if (sFileName[i] != Path.GetFileName(gFileName[i])) { zf.Add(sFileName[i], Path.GetFileName(sFileName[i])); } }
+    }
+
+
 
     private IEnumerator InputText(string str)
     {
@@ -208,22 +663,17 @@ public class ScenariosceneManager : MonoBehaviour
         objInput.gameObject.SetActive(true);
         InputField inputField = objInput.GetComponent<InputField>();
         inputField.text = "";
-        inputField.ActivateInputField();
         objBox[3].gameObject.SetActive(true);
         objBox[3].GetComponentInChildren<Text>().text = "決定";
         SelectBoxMake(0, 0, 0, 2, false);
         while (selectNum==-1) { yield return null; }
-        PlayerPrefs.SetString(str,inputField.text);
         objInput.gameObject.SetActive(false);
         objBox[3].gameObject.SetActive(false);
-        sentenceEnd = true;
     }
 
-    private IEnumerator StatusChange(string[] separateText)
+    private void StatusChange(string[] separateText)
     {
-        int changeValue = 0;
-        int changeValue2 = 0;
-        int x1,x2, y1, y2;
+        int x1,x2, y2;
         string targetStr;
         Utility u1 = GetComponent<Utility>();
         string[] separate3Text;
@@ -231,574 +681,30 @@ public class ScenariosceneManager : MonoBehaviour
         if (int.TryParse(separateText[1].Replace("\r", "").Replace("\n", ""), out x1))
         {
             x2 = x1;
-            if (PlayerPrefs.GetInt(targetStr, 0) < -x1) { x1 = -1 * PlayerPrefs.GetInt(targetStr, 0); }
-            if (PlayerPrefs.GetInt(targetStr, 0) + x1 >=100) { x1 = 99 - PlayerPrefs.GetInt(targetStr, 0); }
-            if (targetStr == "耐久力" && PlayerPrefs.GetInt(targetStr, 0) + x1 >= PlayerPrefs.GetInt("Status9", 0)) { x1 = PlayerPrefs.GetInt("Status9", 0)- PlayerPrefs.GetInt(targetStr, 0); }
-            if (targetStr == "マジック・ポイント" && PlayerPrefs.GetInt(targetStr, 0) + x1 >= PlayerPrefs.GetInt("Status10", 0)) { x1 = PlayerPrefs.GetInt("Status10", 0) - PlayerPrefs.GetInt(targetStr, 0); }
-            if (targetStr == "正気度ポイント" && PlayerPrefs.GetInt(targetStr, 0) + x1 >= 99 - PlayerPrefs.GetInt("Skill53", 0)) {x1= 99 - PlayerPrefs.GetInt("Skill53", 0) - PlayerPrefs.GetInt(targetStr, 0); }
-            PlayerPrefs.SetInt(targetStr, PlayerPrefs.GetInt(targetStr, 0) + x1);
             if (x2 > 0)
             {
-                TextDraw("", separateText[0] + "の能力が" + x2.ToString() + "点上昇した。" + "\n（" + separateText[0] + "：" + PlayerPrefs.GetInt(targetStr, 0).ToString() + "）");
+                TextDraw("", separateText[0] + "の能力が" + x2.ToString() + "点上昇した。");
             }
             else
             {
-                TextDraw("", separateText[0] + "の能力が" + (-1*x2).ToString() + "点減少した。" + "\n（" + separateText[0] + "：" + PlayerPrefs.GetInt(targetStr, 0).ToString() + "）");
+                TextDraw("", separateText[0] + "の能力が" + (-1*x2).ToString() + "点減少した。");
             }
-            for (int v = 0; v < 60; v++) { yield return null; }
         }
         else
         {
             separate3Text = separateText[1].Split('D');
-            if (int.Parse(separate3Text[0]) >= 0) { y2 = 1; } else { y2 = -1; }
-            if (int.Parse(separate3Text[0]) * y2 == 2 && int.Parse(separate3Text[1])!=100)
-            {
-                changeValue = u1.DiceRoll(1, int.Parse(separate3Text[1]));
-                changeValue2 = u1.DiceRoll(1, int.Parse(separate3Text[1]));
-                StartCoroutine(DiceEffect(0, int.Parse(separate3Text[1]), changeValue));
-                StartCoroutine(DiceEffect(1, int.Parse(separate3Text[1]), changeValue2));
-                for (int v = 0; v < 60; v++) { yield return null; }
-                if (PlayerPrefs.GetInt(targetStr, 0) < -1 * (changeValue + changeValue2) * y2) { PlayerPrefs.SetInt(targetStr, 0); }
-                else if (targetStr == "耐久力" && PlayerPrefs.GetInt(targetStr, 0) + (changeValue + changeValue2) * y2 >= PlayerPrefs.GetInt("Status9", 0)) { PlayerPrefs.SetInt(targetStr, PlayerPrefs.GetInt("Status9", 0)); }
-                else if (targetStr == "マジック・ポイント" && PlayerPrefs.GetInt(targetStr, 0) + (changeValue + changeValue2) * y2 >= PlayerPrefs.GetInt("Status10", 0)) { PlayerPrefs.SetInt(targetStr, PlayerPrefs.GetInt("Status10", 0)); }
-                else if (targetStr == "正気度ポイント" && PlayerPrefs.GetInt(targetStr, 0) + (changeValue + changeValue2) * y2 >= 99 - PlayerPrefs.GetInt("Skill53", 0)) { PlayerPrefs.SetInt(targetStr, 99 - PlayerPrefs.GetInt("Skill53", 0)); }
-                else if (PlayerPrefs.GetInt(targetStr, 0) + (changeValue + changeValue2) * y2 >= 100) { PlayerPrefs.SetInt(targetStr, 99); }
-                else { PlayerPrefs.SetInt(targetStr, PlayerPrefs.GetInt(targetStr, 0) + (changeValue + changeValue2) * y2); }
+            int.TryParse(separate3Text[0],out y2);
                 if (y2 > 0)
                 {
-                    TextDraw("", separateText[0] + "の能力が" + changeValue.ToString() + "+" + changeValue2.ToString() + "=" + (changeValue + changeValue2).ToString() + "点上昇した。" + "\n（" + separateText[0] + "：" + PlayerPrefs.GetInt(targetStr, 0).ToString() + "）");
+                    TextDraw("", separateText[0] + "の能力が" + separateText[1]  + "点上昇した。");
                 }
                 else
                 {
-                    TextDraw("", separateText[0] + "の能力が" + changeValue.ToString() + "+" + changeValue2.ToString() + "=" + (changeValue + changeValue2).ToString() + "点減少した。" + "\n（" + separateText[0] + "：" + PlayerPrefs.GetInt(targetStr, 0).ToString() + "）");
+                separateText[1].Replace("-","");
+                    TextDraw("", separateText[0] + "の能力が" + separateText[1] + "点減少した。");
                 }
-                for (int v = 0; v < 60; v++) { yield return null; }
-            }
-            else
-            {
-                for (y1 = 0; y1 < int.Parse(separate3Text[0]) * y2; y1++)
-                {
-                    changeValue = u1.DiceRoll(1, int.Parse(separate3Text[1]));
-                    if (int.Parse(separate3Text[1]) != 100)
-                    {
-                        StartCoroutine(DiceEffect(1, int.Parse(separate3Text[1]), changeValue));
-                    }
-                    else
-                    {
-                        if (changeValue != 100) { StartCoroutine(DiceEffect(0, 10, changeValue / 10)); } else { StartCoroutine(DiceEffect(0, 10, 0)); }
-                        StartCoroutine(DiceEffect(1, 10, changeValue % 10));
-                    }
-                    for (int v = 0; v < 60; v++) { yield return null; }
-                    if (PlayerPrefs.GetInt(targetStr, 0) < -1 * changeValue * y2) { PlayerPrefs.SetInt(targetStr, 0); }
-                    else if (targetStr == "耐久力" && PlayerPrefs.GetInt(targetStr, 0) + changeValue * y2 >= PlayerPrefs.GetInt("Status9", 0)) { PlayerPrefs.SetInt(targetStr, PlayerPrefs.GetInt("Status9", 0)); }
-                    else if (targetStr == "マジック・ポイント" && PlayerPrefs.GetInt(targetStr, 0) + changeValue * y2 >= PlayerPrefs.GetInt("Status10", 0)) { PlayerPrefs.SetInt(targetStr, PlayerPrefs.GetInt("Status10", 0)); }
-                    else if (targetStr == "正気度ポイント" && PlayerPrefs.GetInt(targetStr, 0) + changeValue * y2 >= 99 - PlayerPrefs.GetInt("Skill53", 0)) { PlayerPrefs.SetInt(targetStr, 99 - PlayerPrefs.GetInt("Skill53", 0)); }
-                    else if (PlayerPrefs.GetInt(targetStr, 0) + changeValue * y2 >= 100) { PlayerPrefs.SetInt(targetStr, 99); }
-                    else { PlayerPrefs.SetInt(targetStr, PlayerPrefs.GetInt(targetStr, 0) + changeValue * y2); }
-                    if (y2 > 0)
-                    {
-                        TextDraw("", separateText[0] + "の能力が" + changeValue.ToString() + "点上昇した。" + "\n（" + separateText[0] + "：" + PlayerPrefs.GetInt(targetStr, 0).ToString() + "）");
-                    }
-                    else
-                    {
-                        TextDraw("", separateText[0] + "の能力が" + changeValue.ToString() + "点減少した。" + "\n（" + separateText[0] + "：" + PlayerPrefs.GetInt(targetStr, 0).ToString() + "）");
-                    }
-                    for (int v = 0; v < 60; v++) { yield return null; }
-                }
-            }
+            
         }
-        sentenceEnd = true;
-    }
-
-    private int Difference(string[] separate3Text)
-    {
-        int x1, x2;
-        if (int.TryParse(separate3Text[0], out x1))
-        {
-            if (int.TryParse(separate3Text[1], out x2))
-            {
-                if (x1 >= x2 + int.Parse(separate3Text[2].Replace("\r", "").Replace("\n", ""))) { return 1; }
-            }
-            else
-            {
-                if (x1 >= PlayerPrefs.GetInt(separate3Text[1], 0) + int.Parse(separate3Text[2].Replace("\r", "").Replace("\n", ""))) { return 1; }
-            }
-        }
-        else
-        {
-            if (int.TryParse(separate3Text[1], out x2))
-            {
-                if (PlayerPrefs.GetInt(separate3Text[0], 0) >= x2 + int.Parse(separate3Text[2].Replace("\r", "").Replace("\n", ""))) { return 1; }
-            }
-            else
-            {
-                if (PlayerPrefs.GetInt(separate3Text[0], 0) >= PlayerPrefs.GetInt(separate3Text[1], 0) + int.Parse(separate3Text[2].Replace("\r", "").Replace("\n", ""))) {return 1; }
-            }
-        }
-        return 0;
-    }
-
-    private void BattleBegin(int enemyGraph,int enemyNum,int HP,int playerHP,ref int[] enemyHP)
-    {
-        for (int i = 0; i < enemyNum; i++)
-        {
-            objCharacter[i].gameObject.SetActive(true);
-            objCharacter[i].GetComponent<Image>().sprite = scenarioGraphic[enemyGraph];
-            enemyHP[i] = HP;
-            ObjSizeChangeToGraph(i, scenarioGraphic[enemyGraph]);
-        }
-        if (enemyNum == 1) { objCharacter[0].GetComponent<RectTransform>().localPosition =new Vector3(0, CHARACTER_Y, 1); }
-        if (enemyNum == 2) { objCharacter[0].GetComponent<RectTransform>().localPosition = new Vector3(1 * 150 - 300, CHARACTER_Y, 1); objCharacter[1].GetComponent<RectTransform>().localPosition = new Vector3(3 * 150 - 300, CHARACTER_Y, 1); }
-        if (enemyNum == 3) { objCharacter[1].GetComponent<RectTransform>().localPosition = new Vector3(2 * 150 - 300, CHARACTER_Y, 1); objCharacter[2].GetComponent<RectTransform>().localPosition = new Vector3(4 * 150 - 300, CHARACTER_Y, 1); }
-        StartCoroutine(Status(playerHP, 0));
-    }
-
-    //戦闘処理
-    private IEnumerator Battle(int enemyGraph, int enemyNum, int HP, int DEX, int AttackPercent, int ATDiceNum, int ATDice,bool humanFlag,string tokusyu,string tokusyuSkill,int tokusyuSkillBonus,int maxTurn,bool maxTurnWin)
-    {
-        int[] enemyHP = new int[enemyNum];
-        int kill = 0;
-        int sleep = 0;
-        int playerHP = PlayerPrefs.GetInt("耐久力", 0);
-        int playerDEX = PlayerPrefs.GetInt("Status2", 3);
-        int damage = 0;
-        int avoid = 2;
-        int detailAct = 0;
-        bool cutFlag = false;
-
-        BattleBegin(enemyGraph,enemyNum,HP,playerHP,ref enemyHP);
-
-        Utility u1 = GetComponent<Utility>();
-        for (int x=0;x<maxTurn;x++)
-        {
-            firstSelect:
-            cutFlag = false;
-            selectNum = -1;
-            TextDraw("1.行動選択", "");
-            StartCoroutine(Select("攻撃", "回避","拘束", tokusyu,true)); while (selectNum==-1) { yield return null; }; SystemSEPlay(systemAudio[3]);
-            if (selectNum == 0)
-            {
-                selectNum = -1;
-                TextDraw("1.行動選択→2.攻撃選択", "");
-                StartCoroutine(Select("火器", "格闘", "武器術", "戻る",true)); while (selectNum == -1) { yield return null; }; SystemSEPlay(systemAudio[3]);
-                if (selectNum == 3) { goto firstSelect; }
-                if (selectNum == 2) {cutFlag=true; }
-                detailAct =selectNum;selectNum = 0;
-                TextDraw("", "");
-            }
-            for (int v = 0; v < 50; v++) { yield return null; }
-            if (DEX <= playerDEX && selectNum==0 && playerHP>2)
-            {
-                StartCoroutine(PlayerBattle(detailAct, enemyHP, humanFlag, enemyNum));
-                while (selectNum == 0) { yield return null; }
-                for (int v = 0; v < 100; v++) { yield return null; }
-            }//攻撃１（相手より早い場合）
-
-            if (DEX <= playerDEX && selectNum==2 && playerHP>2)
-            {
-                StartCoroutine(Catcher(enemyNum, humanFlag, enemyHP));
-                while (selectNum == 2) { yield return null; }
-                for (int v = 0; v < 100; v++) { yield return null; }
-            }//拘束１（相手より早い場合）
-            for (int i = 0; i < enemyNum && playerHP>2; i++)
-            {
-                if ((enemyHP[i] > 0 && humanFlag==false) || enemyHP[i]>2)
-                {
-                    if (u1.DiceRoll(1, 100) < AttackPercent)
-                    {
-                        if (humanFlag==true && cutFlag==true)
-                        {
-                            sentenceEnd = false;
-                            avoid = Hantei("武器術", 0);
-                            objRollText.GetComponent<Text>().text = "受け流し\n（武器術）" + objRollText.GetComponent<Text>().text.Substring(3);
-                            if (avoid >= 1) { cutFlag = false; }
-                            while (sentenceEnd == false) { yield return null; }
-                            for (int k = 0; k < 2; k++) { objDice[k].gameObject.SetActive(false); }
-                            objRollText.gameObject.SetActive(false);//ダイスは出っ放しにならない
-                            if (avoid <=1 )
-                            {
-                                sentenceEnd = false;
-                                StartCoroutine(Cut(i,enemyNum));
-                                for (int v = 0; v < 100; v++) { yield return null; }
-                                continue;
-                            }
-                        }
-                        if (selectNum==1)
-                        {
-                            sentenceEnd = false;
-                            avoid = Hantei("回避", 0);
-                            while (sentenceEnd == false) { yield return null; }
-                            for (int k = 0; k < 2; k++) { objDice[k].gameObject.SetActive(false); }
-                            objRollText.gameObject.SetActive(false);//ダイスは出っ放しにならない
-                            if (avoid >= 2) { selectNum = -1; }         
-                            if (avoid <= 1) { sentenceEnd = false; StartCoroutine(Avoid(i,enemyNum)); }
-                        }
-                        if (selectNum !=1 )
-                        {
-                            damage = u1.DiceRoll(ATDiceNum, ATDice);
-                            sentenceEnd = false;
-                            StartCoroutine(EnemyHit(i,enemyNum, damage));
-                            StartCoroutine(Status(playerHP, damage));
-                            playerHP -= damage;
-                            if (playerHP <= 2) { break; }
-                        }
-                        if (selectNum==1 && avoid!=0) { selectNum = -1; }//スペシャルなら回避を連続でできる。
-                    }
-                    else
-                    {
-                        sentenceEnd = false;
-                        StartCoroutine(EnemyMiss(i,enemyNum));
-                    }
-                    for (int v = 0; v < 100; v++) { yield return null; }
-                }
-            }//敵の攻撃
-            if(selectNum == 0 && playerHP>2)
-            {
-                StartCoroutine(PlayerBattle(detailAct, enemyHP, humanFlag, enemyNum));
-                while (selectNum == 0) {  yield return null; }
-                for (int v = 0; v < 100; v++) { yield return null; }
-            }//攻撃２（相手より遅い場合）
-            if (selectNum == 2 && playerHP>2)
-            {
-                StartCoroutine(Catcher(enemyNum,humanFlag,enemyHP));
-                while (selectNum == 2) { yield return null; }
-                for (int v = 0; v < 100; v++) { yield return null; }
-            }//拘束２（相手より遅い場合）
-            if(selectNum==3 && playerHP>2)
-            {
-                sentenceEnd = false;
-                if (Hantei(tokusyuSkill, tokusyuSkillBonus) < 2)
-                {
-                    while (sentenceEnd == false) { yield return null; }
-                    for (int k = 0; k < 2; k++) { objDice[k].gameObject.SetActive(false); }
-                    objRollText.gameObject.SetActive(false);//ダイスは出っ放しにならない
-                    battleFlag = 0; BattleEnd(playerHP); yield break;
-                }
-                while (sentenceEnd == false) { yield return null; }
-                for (int v = 0; v < 100; v++) { yield return null; }
-                for (int k = 0; k < 2; k++) { objDice[k].gameObject.SetActive(false); }
-                objRollText.gameObject.SetActive(false);//ダイスは出っ放しにならない
-            }//特殊行動に成功したら戦闘終了
-            //戦闘終了判定
-            for (int i = 0; i < enemyNum; i++) { if (enemyHP[i] <= 2 && humanFlag==true) { sleep++; } if (enemyHP[i] <= 0) { kill++; sleep--; } }
-            if (sleep + kill == enemyNum)
-            {
-                BattleEnd(playerHP);
-                if (kill == enemyNum) { battleFlag = 1; yield break; }//皆殺し勝利
-                if (sleep == enemyNum) { battleFlag = 3; yield break; }//全員捕縛勝利
-                battleFlag = 2; yield break;//捕縛者あり勝利
-            }//勝ち
-            if (playerHP <= 2)
-            {
-                BattleEnd(playerHP);
-                if (playerHP <= 0) { battleFlag = 5; yield break; }//死亡敗北
-                battleFlag = 4; yield break;//生存敗北
-            }//負け
-            sleep = 0;kill = 0;
-        }
-        //戦闘終了判定
-        for (int i = 0; i < enemyNum; i++) { if (enemyHP[i] <= 2 && humanFlag==true) { sleep++; } if (enemyHP[i] <= 0) { kill++; sleep--; } }
-        BattleEnd(playerHP);
-        if (maxTurnWin == true)
-        {
-            if (kill == enemyNum) { battleFlag = 1; yield break; }//皆殺し勝利
-            if (sleep == enemyNum) { battleFlag = 3; yield break; }//全員捕縛勝利
-            battleFlag = 2; yield break;//捕縛者あり勝利
-        }
-        else
-        {
-            if (playerHP <= 0) { battleFlag = 5; yield break; }//死亡敗北
-            battleFlag = 4; yield break;//生存敗北
-        }
-    }
-
-    private void BattleEnd(int playerHP)
-    {
-        PlayerPrefs.SetInt("耐久力", playerHP);
-        StopCoroutine("Status");
-        objTextBox.GetComponent<Text>().text = "";
-        for (int i = 0; i < 5; i++)
-        {
-            objCharacter[i].GetComponent<RectTransform>().localPosition = new Vector3(i * 150 - 300, CHARACTER_Y, 1);
-            objCharacter[i].gameObject.SetActive(false);
-        }
-    }
-
-    private IEnumerator PlayerBattle(int detailAct,int[] enemyHP,bool humanFlag,int enemyNum)
-    {
-        int damage;
-        int y;
-        int playerDB;
-        int attack = 2;
-        Utility u1 = GetComponent<Utility>();
-        if (detailAct == 0)
-        {
-            for(int x=0;x<3;x++)
-            {
-                sentenceEnd = false;
-                attack = Hantei("火器", 0);
-                while (sentenceEnd == false) { yield return null; }
-                for (int k = 0; k < 2; k++) { objDice[k].gameObject.SetActive(false); }
-                objRollText.gameObject.SetActive(false);//ダイスは出っ放しにならない
-                if (attack == 2)
-                {
-                    sentenceEnd = false;
-                    for (y = 0; y < enemyNum-1; y++) { if (enemyHP[y] >= 3 || (enemyHP[y] > 0 && humanFlag == false)) { break; } }
-                    StartCoroutine(PlayerMiss(y,enemyNum));
-                }
-                else
-                {
-                    damage = u1.DiceRoll(1, 10);
-                    sentenceEnd = false;
-                    for (y = 0; y < enemyNum-1; y++) { if (enemyHP[y] >= 3 || (enemyHP[y] > 0 && humanFlag == false)) { break; } }
-                    enemyHP[y] -= damage;
-                    StartCoroutine(PlayerHit(y,enemyNum, damage, 0, 0));
-                    for (int v = 0; v < 60; v++) { yield return null; }
-                    if (attack == 0){x--;}
-                    for (int k = 0; k < 2; k++) { objDice[k].gameObject.SetActive(false); }
-                    objRollText.gameObject.SetActive(false);//ダイスは出っ放しにならない
-                    if (enemyHP[y] <= 0 || (enemyHP[y] <= 2 && humanFlag == true)){ objCharacter[y].gameObject.SetActive(false); }
-                    for (int i = 0; i < 60; i++) { yield return null; }
-                }
-            }
-        }
-        if (detailAct == 1)
-        {
-            for (int x = 0; x < 1; x++)
-            {
-                sentenceEnd = false;
-                attack = Hantei("格闘", 0);
-                while (sentenceEnd == false) { yield return null; }
-                for (int k = 0; k < 2; k++) { objDice[k].gameObject.SetActive(false); }
-                objRollText.gameObject.SetActive(false);//ダイスは出っ放しにならない
-                if (attack == 0) { x--; }
-                if (attack == 2)
-                {
-                    sentenceEnd = false;
-                    for (y = 0; y < enemyNum - 1; y++) { if (enemyHP[y] >= 3 || (enemyHP[y] > 0 && humanFlag == false)) { break; } }
-                    StartCoroutine(PlayerMiss(y,enemyNum));
-                }
-                else
-                {
-                    damage = u1.DiceRoll(1, 6);
-                    StartCoroutine(DiceEffect(0, 6, damage));
-                    playerDB = 0;
-                    if (PlayerPrefs.GetInt("Status8", 0) == 6) { playerDB = u1.DiceRoll(1, 6); StartCoroutine(DiceEffect(1, 6, playerDB)); }
-                    if (PlayerPrefs.GetInt("Status8", 0) == 4) { playerDB = u1.DiceRoll(1, 4); StartCoroutine(DiceEffect(1, 4, playerDB)); }
-                    if (PlayerPrefs.GetInt("Status8", 0) == -4) { playerDB = -u1.DiceRoll(1, 4); StartCoroutine(DiceEffect(1, 4, -playerDB)); }
-                    if (PlayerPrefs.GetInt("Status8", 0) == -6) { playerDB = -u1.DiceRoll(1, 6); StartCoroutine(DiceEffect(1, 6, -playerDB)); }
-                    for (int i = 0; i < 60; i++) { yield return null; }
-                    sentenceEnd = false;
-                    for (y = 0; y < enemyNum - 1; y++) { if (enemyHP[y] >= 3 || (enemyHP[y] > 0 && humanFlag == false)) { break; } }
-                    if (damage + playerDB > 0) { enemyHP[y] -= damage + playerDB; }
-                    StartCoroutine(PlayerHit(y,enemyNum, damage, playerDB, detailAct));
-                    for (int k = 0; k < 2; k++) { objDice[k].gameObject.SetActive(false); }
-                    objRollText.gameObject.SetActive(false);//ダイスは出っ放しにならない
-                    if (enemyHP[y] <= 0 || (enemyHP[y] <= 2 && humanFlag == true)) { objCharacter[y].gameObject.SetActive(false); }
-                    for (int i = 0; i < 60; i++) { yield return null; }
-                }
-            }
-        }
-        if (detailAct == 2)
-        {
-            for (int x = 0; x < 1; x++)
-            {
-                sentenceEnd = false;
-                attack = Hantei("武器術", 0);
-                while (sentenceEnd == false) { yield return null; }
-                for (int k = 0; k < 2; k++) { objDice[k].gameObject.SetActive(false); }
-                objRollText.gameObject.SetActive(false);//ダイスは出っ放しにならない
-                if (attack ==0) {x--; }
-                if (attack == 2)
-                {
-                    sentenceEnd = false;
-                    for (y = 0; y < enemyNum - 1; y++) { if (enemyHP[y] >= 3 || (enemyHP[y] > 0 && humanFlag == false)) { break; } }
-                    StartCoroutine(PlayerMiss(y,enemyNum));
-                }
-                else
-                {
-                    damage = u1.DiceRoll(1, 10);
-                    if (damage < 10) { StartCoroutine(DiceEffect(0, 10, damage)); } else { StartCoroutine(DiceEffect(0, 10, 0)); }
-                    playerDB = 0;
-                    if (PlayerPrefs.GetInt("Status8", 0) == 6) { playerDB = u1.DiceRoll(1, 6); StartCoroutine(DiceEffect(1, 6, playerDB)); }
-                    if (PlayerPrefs.GetInt("Status8", 0) == 4) { playerDB = u1.DiceRoll(1, 4); StartCoroutine(DiceEffect(1, 4, playerDB)); }
-                    if (PlayerPrefs.GetInt("Status8", 0) == -4) { playerDB = -u1.DiceRoll(1, 4); StartCoroutine(DiceEffect(1, 4, -playerDB)); }
-                    if (PlayerPrefs.GetInt("Status8", 0) == -6) { playerDB = -u1.DiceRoll(1, 6); StartCoroutine(DiceEffect(1, 6, -playerDB)); }
-                    for (int i = 0; i < 60; i++) { yield return null; } 
-                    sentenceEnd = false;
-                    for (y = 0; y < enemyNum - 1; y++) { if (enemyHP[y] >= 3 || (enemyHP[y] > 0 && humanFlag == false)) { break; } }
-                    if (damage + playerDB > 0) { enemyHP[y] -= damage + playerDB; }
-                    StartCoroutine(PlayerHit(y,enemyNum, damage, playerDB, detailAct));
-                    for (int k = 0; k < 2; k++) { objDice[k].gameObject.SetActive(false); }
-                    objRollText.gameObject.SetActive(false);//ダイスは出っ放しにならない
-                    if (enemyHP[y] <= 0 || (enemyHP[y] <= 2 && humanFlag == true)) { objCharacter[y].gameObject.SetActive(false); }
-                    for (int i = 0; i < 60; i++) { yield return null; }
-                }
-            }
-        }
-        selectNum = -1;
-    }
-    private IEnumerator Status(int playerHP,int damage)
-    {
-        int maxHP = PlayerPrefs.GetInt("Status9", 0);
-        string color1="";
-        string color2="";
-        if(playerHP<=0){ color1 = "<color=red>";color2 = "</color>"; }else if (playerHP < 2) { color1 = "<color=orange>";color2 = "</color>"; }else if(playerHP<=maxHP/2){ color1="<color=yellow>"; color2 = "</color>"; } else { color1 = ""; color2 = ""; }
-        objTextBox.GetComponent<Text>().text = color1 + "耐久力：" + playerHP.ToString() + " ／ " + maxHP.ToString() + color2;
-        for (int i = 0; i < 6; i++) { yield return null; }
-        while (damage > 0)
-        {
-            playerHP--; damage--;
-            if (playerHP <= 0) { color1 = "<color=red>"; color2 = "</color>"; } else if (playerHP < 2) { color1 = "<color=orange>"; color2 = "</color>"; } else if (playerHP <= maxHP/2) { color1 = "<color=yellow>"; color2 = "</color>"; } else { color1 = "";color2 = ""; }
-            objTextBox.GetComponent<Text>().text =color1 + "耐久力：" + playerHP.ToString() + " ／ " + maxHP.ToString() + color2;
-            for (int i=0;i<6;i++) { yield return null; }
-        }
-        if (battleFlag != -1) { objTextBox.GetComponent<Text>().text = ""; }
-    }
-
-    private IEnumerator Catcher(int enemyNum,bool humanFlag,int[] enemyHP)
-    {
-        int sleep=0;
-        int kill=0;
-        int catcher;
-        int catcherNum;
-        int y;
-        for (y = 0; y < enemyNum - 1; y++) { if (enemyHP[y] > 3 || (enemyHP[y] > 0 && humanFlag == false)) { break; } }
-        if (humanFlag == false) {  TextDraw("", "拘束できる相手ではない……！"); for (int i = 0; i < 80; i++) { yield return null; } }//人外は拘束できない
-        else
-        {
-
-            for (int i = 0; i < enemyNum; i++) { if (enemyHP[i] <= 2 && humanFlag == true) { sleep++; } if (enemyHP[i] <= 0) { kill++; sleep--; } }
-            for (catcherNum = 0; catcherNum < enemyNum - sleep - kill; catcherNum++)
-            {
-                objCharacter[y].GetComponent<Image>().color = new Color(0.5f, 0.5f, 0.5f);
-                sentenceEnd = false;
-                catcher = Hantei("格闘", +250);
-                while (sentenceEnd == false) { yield return null; }
-                for (int k = 0; k < 2; k++) { objDice[k].gameObject.SetActive(false); }
-                objRollText.gameObject.SetActive(false);//ダイスは出っ放しにならない
-                objCharacter[y].GetComponent<Image>().color = new Color(1, 1, 1);
-                y++;
-                if (catcher == 2) { break; }
-                if (catcher == 1) { catcherNum++; break; }
-            }
-            if (enemyNum - sleep - kill <= catcherNum) { for (int i = 0; i < enemyNum; i++) { if (enemyHP[i] > 3) { enemyHP[i] = 2; } } }//全員捕獲した場合のみ、それらのHPを２にして戦闘終了処理へ
-            else
-            {
-                TextDraw("", "<color=red>全員拘束には至らなかった……。</color>"); for (int i = 0; i < 80; i++) { yield return null; }
-            }
-        }
-        selectNum = -1;
-    }
-
-    private IEnumerator PlayerMiss(int target,int enemyNum)
-    {
-        SystemSEPlay(systemAudio[7]);
-        TextDraw("", "攻撃を外した！");
-        for (int v = 0; v < 100; v++) { yield return null; }
-    }
-
-    private IEnumerator EnemyMiss(int target,int enemyNum)
-    {
-        int targetGra=target;
-        if (enemyNum == 1 && target == 0) { targetGra = 2; }
-        if (enemyNum == 2) { if (target == 0) { targetGra = 1; } else { targetGra = 3; } }
-        if (enemyNum == 3) { if (target == 0) { targetGra = 0; } else if (target==1) { targetGra = 2; } else { targetGra = 4; } }
-        SystemSEPlay(systemAudio[7]);
-        objCharacter[target].GetComponent<RectTransform>().localPosition = new Vector3(targetGra * 150 - 300, CHARACTER_Y - 100, 0);
-        TextDraw("", "相手の攻撃は当たらなかった。");
-        for (int v = 0; v < 100; v++) { yield return null; }
-        objCharacter[target].GetComponent<RectTransform>().localPosition = new Vector3(targetGra * 150 - 300, CHARACTER_Y, 0);
-    }
-
-    private IEnumerator PlayerHit(int target,int enemyNum,int damage,int db,int detailAct)
-    {
-        int targetGra = target;
-        if (enemyNum == 1 && target == 0) { targetGra = 2; }
-        if (enemyNum == 2) { if (target == 0) { targetGra = 1; } else { targetGra = 3; } }
-        if (enemyNum == 3) { if (target == 0) { targetGra = 0; } else if (target == 1) { targetGra = 2; } else { targetGra = 4; } }
-
-        SystemSEPlay(systemAudio[4+detailAct]);
-        objCharacter[target].GetComponent<Image>().color = new Color(0.5f,0.5f,0.5f);
-        if (damage + db > 0)
-        {
-            if (db > 0)
-            {
-                TextDraw("", "damage→" + damage.ToString() + "+" + db.ToString() + "\n" + (damage + db).ToString() + "点のダメージを与えた。");
-            }
-            else if (db < 0)
-            {
-                TextDraw("", "damage→" + damage.ToString() + db.ToString() + "\n" + (damage + db).ToString() + "点のダメージを与えた。");
-            }
-            else
-            {
-                TextDraw("", "damage→" + damage.ToString() + "\n" + (damage + db).ToString() + "点のダメージを与えた。");
-            }
-        }
-        else
-        {
-            if (db > 0)
-            {
-                TextDraw("", "damage→" + damage.ToString() + "+" + db.ToString() + "\n" + "ダメージを与えられない！");
-            }
-            else if (db < 0)
-            {
-                TextDraw("", "damage→" + damage.ToString() + db.ToString() + "\n" + "ダメージを与えられない！");
-            }
-            else
-            {
-                TextDraw("", "damage→" + damage.ToString() + "\n" + "ダメージを与えられない！");
-            }
-        }
-        for (int v = 0; v < 100; v++) { yield return null; }
-        objCharacter[target].GetComponent<Image>().color = new Color(1, 1, 1);
-    }
-
-    private IEnumerator EnemyHit(int target,int enemyNum, int damage)
-    {
-        int targetGra = target;
-        if (enemyNum == 1 && target == 0) { targetGra = 2; }
-        if (enemyNum == 2) { if (target == 0) { targetGra = 1; } else { targetGra = 3; } }
-        if (enemyNum == 3) { if (target == 0) { targetGra = 0; } else if (target == 1) { targetGra = 2; } else { targetGra = 4; } }
-
-        SystemSEPlay(systemAudio[5]);
-        objCharacter[target].GetComponent<RectTransform>().localPosition = new Vector3(targetGra * 150 - 300, CHARACTER_Y - 100, 0);
-        TextDraw("", damage.ToString() + "点のダメージを受けた。");
-        for (int v = 0; v < 100; v++)
-        {
-            if (v < 30) { objCanvas.GetComponent<RectTransform>().localPosition = new Vector3(0, 5 * (v % 2), 0); }
-            yield return null;
-        }
-        objCanvas.GetComponent<RectTransform>().localPosition = new Vector3(0, 0, 0);
-        objCharacter[target].GetComponent<RectTransform>().localPosition = new Vector3(targetGra * 150 - 300, CHARACTER_Y, 0);
-    }
-
-    private IEnumerator Cut(int target,int enemyNum)
-    {
-        int targetGra = target;
-        if (enemyNum == 1 && target == 0) { targetGra = 2; }
-        if (enemyNum == 2) { if (target == 0) { targetGra = 1; } else { targetGra = 3; } }
-        if (enemyNum == 3) { if (target == 0) { targetGra = 0; } else if (target == 1) { targetGra = 2; } else { targetGra = 4; } }
-
-        SystemSEPlay(systemAudio[9]);
-        objCharacter[target].GetComponent<RectTransform>().localPosition = new Vector3(targetGra * 150 - 300, CHARACTER_Y - 100, 0);
-        TextDraw("", "攻撃を受け流した。");
-        for (int v = 0; v < 100; v++) { yield return null; }
-        objCharacter[target].GetComponent<RectTransform>().localPosition = new Vector3(targetGra * 150 - 300, CHARACTER_Y, 0);
-    }
-
-    private IEnumerator Avoid(int target,int enemyNum)
-    {
-        int targetGra = target;
-        if (enemyNum == 1 && target == 0) { targetGra = 2; }
-        if (enemyNum == 2) { if (target == 0) { targetGra = 1; } else { targetGra = 3; } }
-        if (enemyNum == 3) { if (target == 0) { targetGra = 0; } else if (target == 1) { targetGra = 2; } else { targetGra = 4; } }
-
-        SystemSEPlay(systemAudio[8]);
-        objCharacter[target].GetComponent<RectTransform>().localPosition = new Vector3(targetGra * 150 - 300, CHARACTER_Y - 100, 0);
-        TextDraw("", "攻撃を回避した。");
-        for (int v = 0; v < 100; v++) { yield return null; }
-        objCharacter[target].GetComponent<RectTransform>().localPosition = new Vector3(targetGra * 150 - 300, CHARACTER_Y, 0);
     }
 
     private void SelectBoxMake(int choiceA, int choiceB, int choiceC, int choiceD,bool inBattleFlag)
@@ -817,11 +723,6 @@ public class ScenariosceneManager : MonoBehaviour
         }
     }
 
-    public void SelePush(int selectnum)
-    {
-        selectNum=selectnum;
-    }
-
     private IEnumerator Select(string choiceA,string choiceB,string choiceC,string choiceD,bool inBattleFlag)
     {
         objBox[0].gameObject.SetActive(true); objBox[0].GetComponentInChildren<Text>().text = choiceA;
@@ -836,13 +737,6 @@ public class ScenariosceneManager : MonoBehaviour
             yield return null;
         }
         for (int i = 0; i < 4; i++) { objBox[i].gameObject.SetActive(false); }
-        sentenceEnd = true;
-    }
-
-    private void SystemSEPlay(AudioClip audio)
-    {
-        Utility u1 = GetComponent<Utility>();
-        u1.SEPlay(audio);
     }
 
     private int SkillCheck(string targetStr)
@@ -949,7 +843,6 @@ public class ScenariosceneManager : MonoBehaviour
 
     private int Hantei(string targetStr,int bonus)
     {
-        int dice;
         int target=0;
         string bonusStr="";
         target=SkillCheck(targetStr);
@@ -959,84 +852,8 @@ public class ScenariosceneManager : MonoBehaviour
         if (target > -bonus) { objRollText.GetComponent<Text>().text = targetStr + bonusStr + "\n" + "<color=#88ff88ff>" + (target + bonus).ToString() + "</color>"; } else { objRollText.GetComponent<Text>().text = targetStr + bonusStr + "\n" + "<color=#88ff88ff>" + "自動失敗" + "</color>"; }
         Utility u1 = GetComponent<Utility>();
         objTextBox.gameObject.SetActive(true);
-        dice =u1.DiceRoll(1, 100);
-        if (dice != 100) { StartCoroutine(DiceEffect(0, 10, dice / 10)); } else { StartCoroutine(DiceEffect(0, 10, 0)); }
-        StartCoroutine(DiceEffect(1, 10, dice % 10));
-        StartCoroutine(DiceText(dice, target, bonus,targetStr,bonusStr));
-        if (dice > target + bonus)
-        {
-            return 2;
-        }
-        if (dice <= target+ bonus)
-        {
-            if (dice <= (target+bonus)/5)
-            {
-                return 0;
-            }
-            return 1;
-        }
         return 0;
     }
-
-    private IEnumerator DiceText(int dice, int target, int bonus,string targetStr,string bonusStr)
-    {
-        for (int j = 0; j < 50; j++) { yield return null; }
-        if (dice > target + bonus)
-        {
-            objText.GetComponent<Text>().text = "<color=#ff0000ff>[DiceRoll]\n1D100→　" + dice.ToString() + " > " + (target + bonus).ToString() + " (<" + targetStr + ">" + bonusStr + ")\n<size=72>（失敗）</size></color>";
-            for (int j = 0; j < 40; j++) { yield return null; }
-            SystemSEPlay(systemAudio[2]);
-        }
-        if (dice <= target + bonus)
-        {
-            objText.GetComponent<Text>().text = "<color=#000099ff>DiceRoll:1D100→  " + dice.ToString() + " <= " + (target + bonus).ToString() + "\n　　　　　　　　" + targetStr + bonusStr + "   （成功）</color>";
-            if (dice <= (target+bonus)/5)
-            {
-                objText.GetComponent<Text>().text = "<color=#0000ffff>DiceRoll:1D100→  " + dice.ToString() + " << " + (target + bonus).ToString() + "\n　　　　　　　　" + targetStr + bonusStr + "   （スペシャル）</color>";
-            }
-            for (int j = 0; j < 40; j++) { yield return null; }
-            SystemSEPlay(systemAudio[1]);
-        }
-        sentenceEnd = true;
-    }
-
-
-        private IEnumerator DiceEffect(int dicenum,int dicetype,int num)
-    {
-        objDice[dicenum].gameObject.SetActive(true);
-
-        if (dicetype == 10)
-        {
-            for (int i = 0; i < 7; i++)
-            {
-                objDice[dicenum].GetComponent<Image>().sprite = moveDice10Graphic[i];
-                for (int j = 0; j < 6; j++) { yield return null; }
-            }
-            objDice[dicenum].GetComponent<Image>().sprite = dice10Graphic[num];
-        }
-        if (dicetype == 6)
-        {
-            for (int i = 0; i < 8; i++)
-            {
-                objDice[dicenum].GetComponent<Image>().sprite = moveDice6Graphic[i];
-                for (int j = 0; j < 6; j++) { yield return null; }
-            }
-            objDice[dicenum].GetComponent<Image>().sprite = dice6Graphic[num-1];
-        }
-        if (dicetype == 4)
-        {
-            for (int i = 0; i < 7; i++)
-            {
-                objDice[dicenum].GetComponent<Image>().sprite = moveDice4Graphic[i];
-                for (int j = 0; j < 6; j++) { yield return null; }
-            }
-            objDice[dicenum].GetComponent<Image>().sprite = dice4Graphic[num-1];
-        }
-        SystemSEPlay(systemAudio[0]);
-    }
-
-
-
 
     private void TextDraw(string name,string text)
     {
@@ -1073,396 +890,9 @@ public class ScenariosceneManager : MonoBehaviour
         ObjSizeChangeToGraph(position-1,scenarioGraphic[character]);
     }
 
-    private void ItemDraw(int item)
-    {
-        if (item == -1) { objItem.gameObject.SetActive(false); return; }
-        objItem.gameObject.SetActive(true);
-        objItem.GetComponent<Image>().sprite = scenarioGraphic[item];
-    }
-
-    private void BGMPlay(int bgm)
-    {
-        Utility u1 = GetComponent<Utility>();
-        u1.BGMPlay(scenarioAudio[bgm]);
-    }
-
-    private void BGMIn(int time)
-    {
-        Utility u1 = GetComponent<Utility>();
-        StartCoroutine(u1.BGMFadeIn(time));
-    }
-
-    private void BGMOut(int time)
-    {
-        Utility u1 = GetComponent<Utility>();
-        StartCoroutine(u1.BGMFadeOut(time));
-    }
-
-    private void BGMStop()
-    {
-        Utility u1 = GetComponent<Utility>();
-        u1.BGMStop();
-    }
-
-    private void SEPlay(int se)
-    {
-        Utility u1 = GetComponent<Utility>();
-        u1.SEPlay(scenarioAudio[se]);
-    }
-
-
-    private IEnumerator CharacterMove(int position, string lr)
-    {
-        for (int i = 0; i < 5; i++)//キャラクター移動
-        {
-            if (lr == "L")
-            {
-                objCharacter[position - 1].GetComponent<RectTransform>().localPosition = new Vector3((position - 1) * 150 + i * 6 - 300 - 30, CHARACTER_Y, 0);
-            }
-            if (lr == "R")
-            {
-                objCharacter[position - 1].GetComponent<RectTransform>().localPosition = new Vector3((position - 1) * 150 - i * 6 - 300 + 30, CHARACTER_Y, 0);
-            }
-            if (lr == "N") {; }//Nなら動きなし
-            yield return null;
-        }
-        objCharacter[position - 1].GetComponent<RectTransform>().localPosition = new Vector3((position - 1) * 150 - 300, CHARACTER_Y, 0);
-        sentenceEnd = true;
-    }
-
-    //画面振動する関数
-    private IEnumerator ShakeScreen()
-    {
-        int i;
-        for (i = 0; i < 30; i++)
-        {
-            objCanvas.GetComponent<RectTransform>().localPosition = new Vector3(0, 0 - 5 + 10 * (i % 2));
-            yield return null;
-        }
-        objCanvas.GetComponent<RectTransform>().localPosition = new Vector3(0, 0);
-        sentenceEnd = true;
-    }
-
-    //キャラクターの小ジャンプ
-    private IEnumerator CharacterJump(int position)
-    {
-        for (int i = 0; i < 7; i++)
-        {
-            objCharacter[position - 1].GetComponent<RectTransform>().localPosition = new Vector3((position - 1) * 150 - 300, CHARACTER_Y + i * 2, 1);
-            yield return null;
-        }
-        for (int i = 7; i > 0; i--)
-        {
-            objCharacter[position - 1].GetComponent<RectTransform>().localPosition = new Vector3((position - 1) * 150 - 300, CHARACTER_Y + i * 2, 1);
-            yield return null;
-        }
-        objCharacter[position - 1].GetComponent<RectTransform>().localPosition = new Vector3((position - 1) * 150 - 300, CHARACTER_Y, 1);
-        sentenceEnd = true;
-    }
-
-
-    private IEnumerator MainCoroutine()
-    {
-        BGMManager b1 = objBGM.GetComponent<BGMManager>();
-        //シナリオデータ読込
-        LoadScenario(b1.chapterName);
-        //シナリオ処理
-        yield return StartCoroutine(NovelGame());
-    }
-
-
-
-    //目次ファイルを読み込み、ファイルを拾ってくる。
-    private void LoadScenario(string path)
-    {
-        // 目次ファイルが無かったら終わる
-        if (!File.Exists(_FILE_HEADER))
-        {
-            obj.GetComponent<Text>().text = ("エラー。シナリオファイルが見当たりません。" + _FILE_HEADER + "\\" + path);
-            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-        }
-
-        try
-        {
-            //閲覧するエントリ
-            string extractFile = path;
-            ICSharpCode.SharpZipLib.Zip.ZipFile zf;
-            //ZipFileオブジェクトの作成
-            zf = new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));//説明に書かれてる以外のエラーが出てる。
-
-            zf.Password = Secret.SecretString.zipPass;
-            //展開するエントリを探す
-            ICSharpCode.SharpZipLib.Zip.ZipEntry ze;
-            ze = zf.GetEntry(extractFile);
-
-            if (ze != null)
-            {
-                //閲覧するZIPエントリのStreamを取得
-                Stream reader = zf.GetInputStream(ze);
-                //文字コードを指定してStreamReaderを作成
-                StreamReader sr = new StreamReader(
-                    reader, System.Text.Encoding.GetEncoding("UTF-8"));
-                // テキストを取り出す
-                string text = sr.ReadToEnd();
-
-                // 読み込んだ目次テキストファイルからstring配列を作成する
-                scenarioFilePath = text.Split('\n');
-
-                //アドレスから各ファイルをロード
-                for (int i = 0; i < scenarioFilePath.Length; i++)
-                {
-                    if (scenarioFilePath[i] == "[END]") { break; }
-                    LoadFile(scenarioFilePath[i].Replace("\r", "").Replace("\n", ""), zf);
-                }
-                //閉じる
-                sr.Close();
-                reader.Close();
-            }
-            else
-            {
-                GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-            }
-            //閉じる
-            zf.Close();
-        }
-        catch(PathTooLongException)
-        {
-            obj.GetComponent<Text>().text = ("エラーZIP1。シナリオファイルの形式が不適合です。" + PlayerPrefs.GetString("進行中シナリオ", "") + "\\" + path);
-            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-        }
-        catch (UnauthorizedAccessException)
-        {
-            obj.GetComponent<Text>().text = ("エラーZIP2。シナリオファイルの形式が不適合です。" + PlayerPrefs.GetString("進行中シナリオ", "") + "\\" + path);
-            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-        }
-        catch (DirectoryNotFoundException)
-        {
-            obj.GetComponent<Text>().text = ("エラーZIP3。シナリオファイルの形式が不適合です。" + PlayerPrefs.GetString("進行中シナリオ", "") + "\\" + path);
-            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            obj.GetComponent<Text>().text = ("エラーZIP4。シナリオファイルの形式が不適合です。" + PlayerPrefs.GetString("進行中シナリオ", "") + "\\" + path);
-            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-        }
-        catch (FileNotFoundException)
-        {
-            obj.GetComponent<Text>().text = ("エラーZIP5。シナリオファイルの形式が不適合です。" + PlayerPrefs.GetString("進行中シナリオ", "") + "\\" + path);
-            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-        }
-        catch (NotSupportedException)
-        {
-            obj.GetComponent<Text>().text = ("エラーZIP6。シナリオファイルの形式が不適合です。" + PlayerPrefs.GetString("進行中シナリオ", "") + "\\" + path);
-            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-        }
-        catch
-        {
-            obj.GetComponent<Text>().text = ("エラーZIP7。シナリオファイルの形式が不適合です。" + PlayerPrefs.GetString("進行中シナリオ", "") + "\\" + path);
-            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-        }
-    }
-
-    //引数pathのみのバージョン。テキストデータの読み込みのみ対応。（スクリプトからの直呼び出し『NextFile:』用）
-    private void LoadFile(string path)
-    {
-        // 目次ファイルが無かったら終わる
-        if (!File.Exists(_FILE_HEADER))
-        {
-            obj.GetComponent<Text>().text = ("エラー。シナリオファイルが見当たりません。" + PlayerPrefs.GetString("進行中シナリオ", "") + "\\" + path);
-            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-        }
-        try
-        {
-            //閲覧するエントリ
-            string extractFile = path;
-
-            //ZipFileオブジェクトの作成
-            ICSharpCode.SharpZipLib.Zip.ZipFile zf =
-                new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
-            zf.Password = Secret.SecretString.zipPass;
-            //展開するエントリを探す
-            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(extractFile);
-
-            if (ze != null)
-            {
-                //閲覧するZIPエントリのStreamを取得
-                Stream reader = zf.GetInputStream(ze);
-                //文字コードを指定してStreamReaderを作成
-                StreamReader sr = new StreamReader(
-                    reader, System.Text.Encoding.GetEncoding("UTF-8"));
-                // テキストを取り出す
-                string text = sr.ReadToEnd();
-
-                // 読み込んだ目次テキストファイルからstring配列を作成する
-                scenarioText = text.Split('\n');
-
-                //閉じる
-                sr.Close();
-                reader.Close();
-            }
-            else
-            {
-                GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-            }
-            //閉じる
-            zf.Close();
-        }
-        catch
-        {
-            obj.GetComponent<Text>().text = ("エラー。シナリオファイルの形式が不適合です。" + _FILE_HEADER + "\\" + path);
-            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-        }
-
-    }
-
-    private void LoadFile(string path, ICSharpCode.SharpZipLib.Zip.ZipFile zf)
-    {
-        int j;
-        byte[] buffer;
-        try
-        {
-            //閲覧するエントリ
-            string extractFile = path;
-            //展開するエントリを探す
-            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(extractFile);
-
-            if (ze != null)
-            {
-                //txtファイルの場合
-                if (path.Substring(path.Length - 4) == ".txt")
-                {
-                    //閲覧するZIPエントリのStreamを取得
-                    Stream reader = zf.GetInputStream(ze);
-                    //文字コードを指定してStreamReaderを作成
-                    StreamReader sr = new StreamReader(
-                        reader, System.Text.Encoding.GetEncoding("UTF-8"));
-                    // テキストを取り出す
-                    string text = sr.ReadToEnd();
-
-                    // 読み込んだ目次テキストファイルからstring配列を作成する
-                    scenarioText = text.Split('\n');
-
-                    //閉じる
-                    sr.Close();
-                    reader.Close();
-                }
-
-                //pngファイルの場合
-                if (path.Substring(path.Length - 4) == ".png")
-                {
-                    //閲覧するZIPエントリのStreamを取得
-                    Stream fs = zf.GetInputStream(ze);
-                    buffer = ReadBinaryData(fs);//bufferにbyte[]になったファイルを読み込み
-
-                    // 画像を取り出す
-                    //横サイズ
-                    int pos = 16;
-                    int width = 0;
-                    for (int i = 0; i < 4; i++)
-                    {
-                        width = width * 256 + buffer[pos++];
-                    }
-                    //縦サイズ
-                    int height = 0;
-                    for (int i = 0; i < 4; i++)
-                    {
-                        height = height * 256 + buffer[pos++];
-                    }
-                    //byteからTexture2D作成
-                    Texture2D texture = new Texture2D(width, height);
-                    texture.LoadImage(buffer);
-
-                    // 読み込んだ画像からSpriteを作成する
-                    for (j = 0; j < 100; j++) { if (scenarioGraphic[j] == null) { break; } }
-                    scenarioGraphic[j] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-
-                    //閉じる
-                    fs.Close();
-                }
-
-                //wavファイルの場合
-                if (path.Substring(path.Length - 4) == ".wav")
-                {
-                    //閲覧するZIPエントリのStreamを取得
-                    Stream fs = zf.GetInputStream(ze);
-                    buffer = ReadBinaryData(fs);//bufferにbyte[]になったファイルを読み込み
-                    for (j = 0; j < 10; j++) { if (scenarioAudio[j] == null) { break; } }
-                    scenarioAudio[j] = WavUtility.ToAudioClip(buffer);
-                    //閉じる
-                    fs.Close();
-                }
-            }
-            else
-            {
-                GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-            }
-        }
-        catch
-        {
-            obj.GetComponent<Text>().text = ("エラー。シナリオファイルの形式が不適合です。" + _FILE_HEADER + "\\" + path);
-            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-        }
-    }
-
-    // ストリームからデータを読み込み、バイト配列に格納
-    static public byte[] ReadBinaryData(Stream st)
-    {
-        using (MemoryStream ms = new MemoryStream())
-        {
-            st.CopyTo(ms);
-            return ms.ToArray();
-        }
-    }
-
     //画像サイズに合わせて立ち絵サイズを変更
     private void ObjSizeChangeToGraph(int position,Sprite sprite)
     {
         objCharacter[position].GetComponent<RectTransform>().sizeDelta=new Vector2(sprite.pixelsPerUnit * sprite.bounds.size.x, sprite.pixelsPerUnit * sprite.bounds.size.y);
-    }
-
-    //画像の100番にはPC立ち絵を。
-    public IEnumerator LoadPlayerChara(string path)
-    {
-        // 指定したファイルをロードする
-        WWW request = new WWW("file://" + path);
-
-        while ((!request.isDone) || (!string.IsNullOrEmpty(request.error)))
-        {
-            yield return new WaitForEndOfFrame();
-        }
-        if (request.texture != null)
-        {
-            // 画像を取り出す
-            Texture2D texture = request.texture;
-
-            // 読み込んだ画像からSpriteを作成する
-            scenarioGraphic[99] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-        }
-    }
-
-
-    //画面が押されたかチェックするコルーチン
-    public IEnumerator PushWait()
-    {
-        while (true)//ブレークするまでループを続ける。
-        {
-            if ((Camera.main.ScreenToWorldPoint(Input.mousePosition).y> -4.2f) && (Input.GetMouseButtonDown(0) == true || (skipFlag == true && skipFlag2 == true)))
-            {
-                yield return null;
-                if (backLogCSFlag == false)
-                {
-                    sentenceEnd = true;
-                    yield break;//falseならコルーチン脱出
-                }
-                else
-                {
-                    yield return null;
-                }
-            }
-            else
-            {
-                yield return null;
-            }
-        }
     }
 }
