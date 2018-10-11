@@ -5,20 +5,15 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
-//選択解除のボタン作る
-//画像音声は、選択したファイル名を横にテキスト表示
-//音声ファイルはクリックで鳴らす。
-//動作テスト
-//既作成コマンドを選択した際に、記入した状態でコマンド入力欄を開く(デバッグである程度動くの確認できてからでOK)
-//画像サウンドデータの削除(デバッグである程度動くの確認できてからでOK)
-//分岐コマンドを置くと、そのコマンドオブジェクトが子として分岐先の横に→オブジェクトを持つ（後でやる）
+
+//画像サウンドデータの削除(マップシーンでの保存時、全てのイベントファイルをチェックして参照されているものを除いて削除する)
+//コマンド選択時、その際の画面を左上に表示する。
 public class ScenariosceneManager : MonoBehaviour
 {
     const int STATUSNUM = 12;
     const int SKILLNUM = 54;
     public string[] scenarioText = new string[100];          //シナリオテキスト保存変数
     public Sprite[] scenarioGraphic = new Sprite[100];       //シナリオ画像保存変数
-    public string[] scenarioFilePath = new string[100];      //シナリオ用ファイルのアドレス
     public AudioClip[] scenarioAudio = new AudioClip[40];    //シナリオＢＧＭ・ＳＥ保存変数
     public Sprite batten;
     private string sectionName = "";
@@ -37,9 +32,9 @@ public class ScenariosceneManager : MonoBehaviour
     List<GameObject> objCB = new List<GameObject>();
     List<GameObject> objGS = new List<GameObject>();
     List<string> commandData = new List<string>();
-    List<string> gFileName = new List<string>();
-    List<string> sFileName = new List<string>();
-    public GameObject[] objMake = new GameObject[25];
+    private string[] gFileName = new string[100];
+    private string[] sFileName = new string[40];
+    public GameObject[] objMake = new GameObject[26];
     public bool backLogCSFlag = false;
     public int selectNum=-1;
     private string commandName;
@@ -58,6 +53,7 @@ public class ScenariosceneManager : MonoBehaviour
     public int selectGS = -1;
     List<string> backFileLog = new List<string>();
     private int commandFileNum = 0;
+    private int graphicNum,soundNum;
 
     // Use this for initialization
     void Start()
@@ -87,6 +83,11 @@ public class ScenariosceneManager : MonoBehaviour
 
     }
 
+    public void SelectReset()
+    {
+        selectNum = -1;
+        try { objCCB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f); } catch { }
+    }
     private void ReadCommandFileNum(string path)
     {
         List<string> texts = new List<string>();
@@ -169,6 +170,7 @@ public class ScenariosceneManager : MonoBehaviour
 
     public void CommandButton(int num)
     {
+        string[] separate;
         for (int i = 0; i < BUTTON_NUM; i++) { objMake[i].SetActive(false); }
         objGS.Clear();
         objMake[num].SetActive(true);
@@ -178,30 +180,50 @@ public class ScenariosceneManager : MonoBehaviour
         {
             for (int i = 0; i < scenarioGraphic.Length; i++)
             {
-                if (scenarioGraphic[i] == null) { break; }
+                if (scenarioGraphic[i] == null) { continue; }
                 objGS.Insert(objGS.Count, Instantiate(objGraSou) as GameObject);
                 objGS[objGS.Count - 1].transform.SetParent(parentGS.transform, false);
-                objGS[objGS.Count - 1].GetComponent<GSButton>().buttonNum = objGS.Count - 1;
+                objGS[objGS.Count-1].name ="GS" + i.ToString();
+                objGS[objGS.Count - 1].GetComponent<GSButton>().buttonNum = i;
                 objGS[objGS.Count - 1].GetComponent<Image>().sprite= scenarioGraphic[i];
+                objGS[objGS.Count - 1].GetComponentInChildren<Text>().text = Path.GetFileName(gFileName[i]);
             }
             if (num == 6)
             {
                 objGS.Insert(objGS.Count, Instantiate(objGraSou) as GameObject);
                 objGS[objGS.Count - 1].transform.SetParent(parentGS.transform, false);
+                objGS[objGS.Count - 1].name = "GS-1";
                 objGS[objGS.Count - 1].GetComponent<Image>().sprite = batten;
                 objGS[objGS.Count - 1].GetComponent<GSButton>().buttonNum = - 1;
+                objGS[objGS.Count - 1].GetComponentInChildren<Text>().text = "＜出ている立ち絵を消す＞";
             }//キャラ選択の場合、表示しないを選択したいことがある。それを×マークでフォロー。
         }
         if (num == 3 || num==5)
         {
             for (int i = 0; i < scenarioAudio.Length; i++)
             {
-                if (scenarioAudio[i] == null) { break; }
+                if (scenarioAudio[i] == null) { continue; }
                 objGS.Insert(objGS.Count, Instantiate(objGraSou) as GameObject);
                 objGS[objGS.Count - 1].transform.SetParent(parentGS.transform, false);
-                objGS[objGS.Count - 1].GetComponent<GSButton>().buttonNum = objGS.Count - 1;
+                objGS[objGS.Count - 1].name = "GS" + i.ToString();
+                objGS[objGS.Count - 1].GetComponent<GSButton>().buttonNum = i;
+                objGS[objGS.Count - 1].GetComponentInChildren<Text>().text = Path.GetFileName(sFileName[i]);
             }
         }
+
+        //分岐コマンドの場合は分岐先表示を出す
+        try//※コマンド選択せずにコマンド種別ボタンを押した時に無視できるようにtry入れておく
+        {
+            if (num == 10) { separate = commandData[selectNum].Substring(7).Replace("\r", "").Replace("\n", "").Split(','); for (int j = 0; j < 4; j++) { if (separate[j] != "") { separate[j] = separate[j] + "→"; } } objCB[selectNum].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\n" + separate[0] + "\r\n" + separate[1] + "\r\n" + separate[2] + "\r\n" + separate[3]; }
+            if (num == 11) { objCB[selectNum].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\nスペシャル→\r\n成功→\r\n失敗→"; }
+            if (num == 12) { objCB[selectNum].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\n特殊終了→\r\n全員殺害→\r\n一部捕縛→\r\n全員捕縛→\r\n気絶敗北→\r\n死亡敗北→"; }
+            if (num == 13) { objCB[selectNum].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\nフラグOn→\r\nフラグOff→"; }
+            if (num==17) { objCB[selectNum].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\n範囲内→\r\n範囲外→"; }
+            if (num==20) { objCB[selectNum].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\n含む→\r\n含まない→"; }
+        }
+        catch { }
+
+
     }
 
     //エクスプローラーのドラッグ＆ドロップ機能は使わない。
@@ -213,10 +235,10 @@ public class ScenariosceneManager : MonoBehaviour
         if (num == 0) { commandText = "Text:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText").GetComponent<InputField>().text; }
         if (num == 1) { commandText = "BackText:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text; }
         if (num == 2) { if (selectGS == -1) { return; } commandText = "Back:" + selectGS.ToString(); }
-        if (num == 3) { if (selectGS == -1) { return; } commandText = "BGM:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text + ":" + selectGS.ToString() ; }
+        if (num == 3) { if (selectGS == -1) { return; } commandText = "BGM:" + selectGS.ToString() + "," + GameObject.Find("InputFieldName").GetComponent<InputField>().text; }
         if (num == 4) { commandText = "BGMStop:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text; }
         if (num == 5) { if (selectGS == -1) { return; } commandText = "SE:" + selectGS.ToString(); }
-        if (num == 6) { if (selectGS == -1) { return; } commandText = "Chara" + ((int)(GameObject.Find("Slider").GetComponent<Slider>().value)).ToString() + ":" + selectGS.ToString(); }
+        if (num == 6) { if (selectGS == -1) { return; } string str=""; if(GameObject.Find("Slider2").GetComponent<Slider>().value==1){ str = "L"; } if (GameObject.Find("Slider2").GetComponent<Slider>().value == 2) { str = "N"; } if (GameObject.Find("Slider2").GetComponent<Slider>().value == 3) { str = "R"; } commandText = "Chara:" + selectGS.ToString() + "," + ((int)(GameObject.Find("Slider").GetComponent<Slider>().value)).ToString() + "," + str; }
         if (num == 7) { if (selectGS == -1) { return; } commandText = "Item:" + selectGS.ToString(); }
         if (num == 8) { commandText = "Shake:"; }
         if (num == 9) { commandText = "Jump:" + ((int)(GameObject.Find("Slider").GetComponent<Slider>().value)).ToString(); }
@@ -226,7 +248,7 @@ public class ScenariosceneManager : MonoBehaviour
         if (num == 13) { commandText="FlagBranch:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
         if (num == 14) { commandText = "FlagChange:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
         if (num == 15) { commandText = "GetTime:"; }
-        if (num == 16) { commandText = "FlagName:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
+        if (num == 16) { commandText = "FlagCopy:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
         if (num == 17) { commandText = "Difference:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text; }
         if (num == 18) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { commandText = "StatusChange:" + GameObject.Find("Label1").GetComponent<Text>().text +"," + GameObject.Find("Label2").GetComponent<Text>().text + "," + GameObject.Find("Label3").GetComponent<Text>().text; } else { commandText = "StatusChange:" + GameObject.Find("Label1").GetComponent<Text>().text + "," + GameObject.Find("InputFieldText").GetComponent<InputField>().text; }  }
         if (num == 19) { commandText = "Input:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text; }
@@ -235,16 +257,18 @@ public class ScenariosceneManager : MonoBehaviour
         if (num == 22) { commandText = "Title:"; }
         if (num == 23) { commandText = "Map:" + (GameObject.Find("Toggle").GetComponent<Toggle>().isOn).ToString().ToLower(); }
         if (num == 24) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { commandText = "NextFile:" + "[system]" + commandFileNum.ToString() + objBGM.GetComponent<BGMManager>().chapterName; } else { commandText = "NextFile:" + "[system]" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + objBGM.GetComponent<BGMManager>().chapterName; } }
+        if (num == 25) { commandText = "BlackOut:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
         if (selectNum >= 0)
         {
             if (commandData.Count <= selectNum) { for (int i = commandData.Count; i <= selectNum; i++) { commandData.Add(""); } }//commandDataの要素数をselectNumが越えたら配列の要素数を合わせて増やす。中身は空でOK。（イベント追加されるとcommandData.Count以上の番号を持つイベントができるため）
             commandData[selectNum] = commandText;
-            objCB[selectNum].GetComponentInChildren<Text>().text = commandData[selectNum];
+            objCB[selectNum].transform.Find("Text").GetComponent<Text>().text = commandData[selectNum];
         }
     }
 
     private void StartScene()
     {
+        graphicNum = 0;soundNum = 0;
         List<string> tmp = LoadIventData(objBGM.GetComponent<BGMManager>().chapterName);
         for (int i = 0; i < tmp.Count; i++)
         {
@@ -260,7 +284,6 @@ public class ScenariosceneManager : MonoBehaviour
 
     private void ZipRead(string path)
     {
-        int j;
         byte[] buffer;
         try
         {
@@ -276,6 +299,18 @@ public class ScenariosceneManager : MonoBehaviour
 
             if (ze != null)
             {
+                //空要素符合なら空要素を加える。
+                if (path == "g")
+                {
+                    scenarioGraphic[graphicNum] = null;
+                    graphicNum++;
+                }
+                if (path == "s")
+                {
+                    scenarioAudio[soundNum] = null;
+                    soundNum++;
+                }
+
                 //pngファイルの場合
                 if (path.Substring(path.Length - 4) == ".png")
                 {
@@ -302,9 +337,9 @@ public class ScenariosceneManager : MonoBehaviour
                     texture.LoadImage(buffer);
 
                     // 読み込んだ画像からSpriteを作成する
-                    for (j = 0; j < 100; j++) { if (scenarioGraphic[j] == null) { break; } }
-                    scenarioGraphic[j] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                    gFileName[j] = path;
+                    scenarioGraphic[graphicNum] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                    gFileName[graphicNum] = path;
+                    graphicNum++;
                     //閉じる
                     fs.Close();
                 }
@@ -315,9 +350,9 @@ public class ScenariosceneManager : MonoBehaviour
                     //閲覧するZIPエントリのStreamを取得
                     Stream fs = zf.GetInputStream(ze);
                     buffer = ReadBinaryData(fs);//bufferにbyte[]になったファイルを読み込み
-                    for (j = 0; j < 40; j++) { if (scenarioAudio[j] == null) { break; } }
-                    scenarioAudio[j] = WavUtility.ToAudioClip(buffer);
-                    sFileName[j] = path;
+                    scenarioAudio[soundNum] = WavUtility.ToAudioClip(buffer);
+                    sFileName[soundNum] = path;
+                    soundNum++;
                     //閉じる
                     fs.Close();
                 }
@@ -397,10 +432,6 @@ public class ScenariosceneManager : MonoBehaviour
 
     private IEnumerator LoadFile(string path,List<string> tmp)
     {
-        int i;
-        int j;
-        bool k;
-
         path = path.Replace("\n", "").Replace("\r","");
         // 指定したファイルをロードする
         WWW request = new WWW(path);
@@ -414,17 +445,27 @@ public class ScenariosceneManager : MonoBehaviour
         {
             // 画像を取り出す
             Texture2D texture = request.texture;
-
-            // 読み込んだ画像からSpriteを作成する
-            for (i = 0; i < 100; i++) { if (scenarioGraphic[i] == null) { break; } }
-            k = true;
+            
             //同名ファイルが既にzipに入っていれば上書き
-            for (j = 0; j < tmp.Count; j++)
+            for (int j = 0; j < tmp.Count; j++)
             {
-                if (Path.GetFileName(@path) == tmp[j]) { i = j;gFileName[i] = path;k = false; break; }
+                if (Path.GetFileName(path) == tmp[j]) { scenarioGraphic[j] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f)); gFileName[j] = path;yield break; }
             }
-            if(k){ gFileName.Add(path); }
-            scenarioGraphic[i] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+            //空要素があればそこに代入。
+            for (int j=0;j<scenarioGraphic.Length-1;j++) {
+                if (scenarioGraphic[j] == null)
+                {
+                    scenarioGraphic[j] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f)); gFileName[j] = path; yield break;
+                }
+            }//-1しているのは指定100([99])番がPCイラスト用に確保してあるから
+
+            //どちらでもなければ追加
+            if (graphicNum<scenarioGraphic.Length-1)
+            {
+                gFileName[graphicNum]=path;
+                scenarioGraphic[graphicNum] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                graphicNum++;
+            }
         }
 
         //wavファイルの場合
@@ -437,34 +478,76 @@ public class ScenariosceneManager : MonoBehaviour
 
     private IEnumerator LoadBGM(WWW request,List<string> tmp,string path)
     {
-        int i;
-        bool k;
-        for (i = 0; i < 40; i++) { if (scenarioAudio[i] == null) { break; } }
-        k = true;
         //同名ファイルが既にzipに入っていれば上書き
         for (int j = 0; j < tmp.Count; j++)
         {
-            if (Path.GetFileName(@path) == tmp[j]) { i = j; sFileName[i] = path;k = false; break; }
+            if (Path.GetFileName(path) == tmp[j])
+            {
+                scenarioAudio[j] = request.GetAudioClip(false, true);
+                while (scenarioAudio[j].loadState == AudioDataLoadState.Loading)
+                {
+                    // ロードが終わるまで待つ
+                    yield return new WaitForEndOfFrame();
+                }
+
+                if (scenarioAudio[j].loadState != AudioDataLoadState.Loaded)
+                {
+                    // 読み込み失敗
+                    Debug.Log("Failed to Load!");
+                    yield break;
+                }
+                sFileName[j] = path;
+                yield break;
+            }
         }
-        if(k){ sFileName.Add(path); }
-        scenarioAudio[i] = request.GetAudioClip(false, true);
-        while (scenarioAudio[i].loadState == AudioDataLoadState.Loading)
+        //空要素があればそこに代入
+        for (int j = 0; j < scenarioAudio.Length; j++)
         {
-            // ロードが終わるまで待つ
-            yield return new WaitForEndOfFrame();
+            if (scenarioAudio[j] == null)
+            {
+                scenarioAudio[j] = request.GetAudioClip(false, true);
+                while (scenarioAudio[j].loadState == AudioDataLoadState.Loading)
+                {
+                    // ロードが終わるまで待つ
+                    yield return new WaitForEndOfFrame();
+                }
+
+                if (scenarioAudio[j].loadState != AudioDataLoadState.Loaded)
+                {
+                    // 読み込み失敗
+                    Debug.Log("Failed to Load!");
+                    yield break;
+                }
+                sFileName[j] = path;
+                yield break;
+            }
         }
 
-        if (scenarioAudio[i].loadState != AudioDataLoadState.Loaded)
+        //どちらでもなければ追加
+        if (soundNum < scenarioAudio.Length)
         {
-            // 読み込み失敗
-            Debug.Log("Failed to Load!");
-            yield break;
+            sFileName[soundNum]=path;
+            scenarioAudio[soundNum] = request.GetAudioClip(false, true);
+            soundNum++;
+            while (scenarioAudio[soundNum].loadState == AudioDataLoadState.Loading)
+            {
+                // ロードが終わるまで待つ
+                yield return new WaitForEndOfFrame();
+            }
+
+            if (scenarioAudio[soundNum].loadState != AudioDataLoadState.Loaded)
+            {
+                // 読み込み失敗
+                Debug.Log("Failed to Load!");
+                yield break;
+            }
         }
     }
 
     //コマンドファイルを読み込む。
     private void LoadCommandData(string path)
     {
+        string[] separate;
         commandData.Clear();
         objCB.Clear();
         try
@@ -503,8 +586,19 @@ public class ScenariosceneManager : MonoBehaviour
                     {
                         objCB.Add(Instantiate(objCommand) as GameObject);
                         objCB[i].transform.SetParent(parentObject.transform, false);
-                        objCB[i].GetComponentInChildren<Text>().text = commandData[i];
+                        objCB[i].transform.Find("Text").GetComponent<Text>().text = commandData[i];
                         objCB[i].GetComponent<CommandButton>().buttonNum = i;
+
+                        //未：分岐コマンドの場合は分岐先表示を出す
+                        if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Select:") { separate = commandData[i].Substring(7).Replace("\r","").Replace("\n","").Split(',');for (int j = 0; j < 4; j++) { if (separate[j] != "") { separate[j] = separate[j] + "→"; } } objCB[i].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\n" + separate[0] + "\r\n" + separate[1] + "\r\n" + separate[2] + "\r\n" + separate[3]; }
+                        if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Hantei:") { objCB[i].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\nスペシャル→\r\n成功→\r\n失敗→"; }
+                        if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Battle:") { objCB[i].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\n特殊終了→\r\n全員殺害→\r\n一部捕縛→\r\n全員捕縛→\r\n気絶敗北→\r\n死亡敗北→"; }
+                        if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "FlagBranch:") { objCB[i].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\nフラグOn→\r\nフラグOff→"; }
+                        if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "Difference:") { objCB[i].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\n範囲内→\r\n範囲外→"; }
+                        if (commandData[i].Length > 6 && commandData[i].Substring(0, 6) == "Equal:") { objCB[i].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\n含む→\r\n含まない→"; }
+
+
+
                     }
                 }
                 else
@@ -559,22 +653,37 @@ public class ScenariosceneManager : MonoBehaviour
         string[] strs;
         try
         {
-            
-            strs = commandData[selectNum].Split(',');
-            /*
-            inputField[0].text = strs[11].Substring(0, strs[11].Length - 4);
-            inputField[1].text = strs[0];
-            inputField[2].text = strs[1];
-            inputField[3].text = strs[2];
-            inputField[4].text = strs[3];
-            inputField[5].text = strs[4];
-            inputField[6].text = strs[5];
-            inputField[7].text = strs[6];
-            inputField[8].text = strs[7];
-            inputField[9].text = strs[8];
-            inputField[10].text = strs[9];
-            inputField[11].text = strs[10];
-            */
+            char[] tmp= {',',':'};
+            strs = commandData[selectNum].Replace("\n","").Replace("\r","").Split(tmp);
+
+            if (strs[0] == "Text") { CommandButton(0); GameObject.Find("InputFieldName").GetComponent<InputField>().text=strs[1]; GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[2]; }
+            if (strs[0] == "BackText") { CommandButton(1); GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; }
+            if (strs[0] == "Back") { CommandButton(2); selectGS = int.Parse(strs[1]); try { objGSB=GameObject.Find("GS" + selectGS.ToString()); objGSB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 0); } catch { } }
+            if (strs[0] == "BGM") { CommandButton(3); selectGS = int.Parse(strs[1]); try { objGSB = GameObject.Find("GS" + selectGS.ToString()); objGSB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 0); } catch { } GameObject.Find("InputFieldName").GetComponent<InputField>().text = strs[2]; }
+            if (strs[0] == "BGMStop") { CommandButton(4); GameObject.Find("InputFieldName").GetComponent<InputField>().text = strs[1]; }
+            if (strs[0] == "SE") { CommandButton(5); selectGS = int.Parse(strs[1]); try { objGSB = GameObject.Find("GS" + selectGS.ToString()); objGSB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 0); } catch { } }
+            if (strs[0] == "Chara") { CommandButton(6); int k=2; if (strs[3]=="L") { k = 1; }if (strs[3] == "N") { k = 2; }if (strs[3] == "R") { k = 3; } selectGS = int.Parse(strs[1]); try { objGSB = GameObject.Find("GS" + selectGS.ToString()); objGSB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 0); } catch { } GameObject.Find("Slider").GetComponent<Slider>().value = int.Parse(strs[2]); GameObject.Find("Slider2").GetComponent<Slider>().value = k; }
+            if (strs[0] == "Item") { CommandButton(7); selectGS = int.Parse(strs[1]); try { objGSB = GameObject.Find("GS" + selectGS.ToString()); objGSB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 0); } catch { } }
+            if (strs[0] == "Shake") { CommandButton(8); }
+            if (strs[0] == "Jump") { CommandButton(9);GameObject.Find("Slider").GetComponent<Slider>().value = int.Parse(strs[1]);  }
+            if (strs[0] == "Select") { CommandButton(10); GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = strs[2]; GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[3]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[4]; }
+            if (strs[0] == "Hantei") { CommandButton(11); GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; }
+            if (strs[0] == "Battle") { CommandButton(12); selectGS = int.Parse(strs[1]); try { objGSB = GameObject.Find("GS" + selectGS.ToString()); objGSB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 0); } catch { } GameObject.Find("Dropdown1").GetComponent<Dropdown>().value = int.Parse(strs[2])-1; GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[3]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[4]; GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text = strs[5]; GameObject.Find("Dropdown2").GetComponent<Dropdown>().value = int.Parse(strs[6]) - 1;int k=0;if (strs[7] == "D4") { k = 0; }if (strs[7] == "D6") { k = 1; }if (strs[7] == "D10") { k = 2; }if (strs[7] == "D100") { k = 3; } GameObject.Find("Dropdown3").GetComponent<Dropdown>().value = k; if (strs[8] == "true") { GameObject.Find("Toggle1").GetComponent<Toggle>().isOn = true; } else { GameObject.Find("Toggle1").GetComponent<Toggle>().isOn = false; } GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text = strs[9]; GameObject.Find("InputFieldText (6)").GetComponent<InputField>().text = strs[10]; GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text = strs[11]; GameObject.Find("InputFieldText (8)").GetComponent<InputField>().text = strs[12]; if (strs[13] == "true") { GameObject.Find("Toggle2").GetComponent<Toggle>().isOn = true; } else { GameObject.Find("Toggle2").GetComponent<Toggle>().isOn = false; } }
+            if (strs[0] == "FlagBranch") { CommandButton(13); GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; }
+            if (strs[0] == "FlagChange") { CommandButton(14); GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; }
+            if (strs[0] == "GetTime") { CommandButton(15); }
+            if (strs[0] == "FlagCopy") { CommandButton(16); GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; }
+            if (strs[0] == "Difference") { CommandButton(17); GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text = strs[3];  }
+            if (strs[0] == "StatusChange") { CommandButton(18); GameObject.Find("Dropdown1").GetComponent<Dropdown>().value = SkillList2(strs[2]); CommandButton(18); GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[2]; int k = 1;if (strs[3] == "1") { k = 0; }if (strs[3] == "2") { k = 1; }if (strs[3] == "-1") { k = 2; }if (strs[3] == "-2") { k = 3; } GameObject.Find("Dropdown2").GetComponent<Dropdown>().value = k; if (strs[4] == "D4") { k = 0; } if (strs[4] == "D6") { k = 1; } if (strs[4] == "D10") { k = 2; } if (strs[4] == "D100") { k = 3; } GameObject.Find("Dropdown3").GetComponent<Dropdown>().value = k; }
+            if (strs[0] == "Input"){CommandButton(19); GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1];}
+            if (strs[0] == "Equal") { CommandButton(20); GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; }
+            if (strs[0] == "Lost") { CommandButton(21); }
+            if (strs[0] == "Title") { CommandButton(22); }
+            if (strs[0] == "Map") { CommandButton(23); if (strs[1] == "true") { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = true; } else { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = false; } }
+            if (strs[0] == "NextFile") { CommandButton(24); GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1]; }
+            if (strs[0] == "BlackOut") { CommandButton(25); GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = strs[2]; GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[3]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[4]; }
+
+
         }
         catch
         {
@@ -638,21 +747,46 @@ public class ScenariosceneManager : MonoBehaviour
         File.Delete(file);
     }
 
+    //イベントファイルを書き出す関数
     private void AddIventGS(ICSharpCode.SharpZipLib.Zip.ZipFile zf)
     {
-        //イベントファイルの作成
+        //冒頭コマンドファイルを入れる。
         string str = "[system]command1" + objBGM.GetComponent<BGMManager>().chapterName;
-        //先にテキストファイルを一時的に書き出しておく。
-        for (int i = 0; i < gFileName.Count; i++) { if (gFileName[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str = str + gFileName[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
-        for (int i = 0; i < sFileName.Count; i++) { if (sFileName[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str = str + sFileName[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+        //先にテキストファイルを一時的に書き出しておく。※コマンドファイルで使われていないモノは保存しない。
+        foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry ze in zf)
+        {
+            if (ze.Name.Substring(0,8) == "[system]" && ze.Name.Contains(objBGM.GetComponent<BGMManager>().chapterName))
+            {
+                //閲覧するZIPエントリのStreamを取得
+                Stream reader = zf.GetInputStream(ze);
+                //文字コードを指定してStreamReaderを作成
+                StreamReader sr = new StreamReader(
+                    reader, System.Text.Encoding.GetEncoding("UTF-8"));
+                // テキストを取り出す
+                string text = sr.ReadToEnd();
+                for (int i = 0; i < scenarioGraphic.Length; i++)
+                {
+                    if (text.Contains("Back:" + i.ToString()) || text.Contains("Chara:" + i.ToString()) || text.Contains("Item:" + i.ToString()) || text.Contains("Battle:" + i.ToString())) { gFileName[i] = "g"; }
+                }
+                for (int i = 0; i < scenarioAudio.Length; i++)
+                {
+                    if (text.Contains("BGM:" + i.ToString()) || text.Contains("SE:" + i.ToString())) { sFileName[i] = "s"; }
+                }
+                //閉じる
+                sr.Close();
+                reader.Close();
+            }
+        }
+        for (int i = 0; i < gFileName.Length; i++) { if (gFileName[i].Replace("\n", "").Replace("\r", "") == "g" ) { str = str + "g\r\n"; continue; } str = str + Path.GetFileName(gFileName[i]).Replace("\n", "").Replace("\r", "") + "\r\n"; }
+        for (int i = 0; i < sFileName.Length; i++) { if (sFileName[i].Replace("\n", "").Replace("\r", "") == "s" ) { str = str + "s\r\n"; continue; } str = str + Path.GetFileName(sFileName[i]).Replace("\n", "").Replace("\r", "") + "\r\n"; }
         str = str + "[END]";
         File.WriteAllText(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName, str);
         zf.Add(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName, Path.GetFileName(objBGM.GetComponent<BGMManager>().chapterName));
         File.Delete(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName);
 
-        //画像サウンドファイルの作成
-        for (int i = 0; i < gFileName.Count; i++) { if (gFileName[i] != Path.GetFileName(gFileName[i])) { zf.Add(gFileName[i], Path.GetFileName(gFileName[i])); } }
-        for (int i = 0; i < sFileName.Count; i++) { if (sFileName[i] != Path.GetFileName(gFileName[i])) { zf.Add(sFileName[i], Path.GetFileName(sFileName[i])); } }
+        //画像サウンドファイルの作成※コマンドファイルで使われていないモノは保存しない＋zipから読み込んだ（既に同じものがzipにある）ファイルは保存しない。（というかファイルじゃないので参照しても取得に失敗する）
+        for (int i = 0; i < gFileName.Length; i++) { if (gFileName[i] != Path.GetFileName(gFileName[i]) && gFileName[i]!="g"){ try { zf.Add(Path.GetFileName(gFileName[i]), Path.GetFileName(gFileName[i])); } catch { } }  }//ファイルがなかったら（主に空き要素の場合）そのままスキップ
+        for (int i = 0; i < sFileName.Length; i++) { if (sFileName[i] != Path.GetFileName(sFileName[i]) && sFileName[i]!="s") { try { zf.Add(Path.GetFileName(sFileName[i]), Path.GetFileName(sFileName[i])); } catch { } } }
     }
 
 
@@ -838,6 +972,76 @@ public class ScenariosceneManager : MonoBehaviour
         if (targetStr == "APP") { target = "Status4"; }
         if (targetStr == "MP") { target = "Status10"; }
         if (targetStr == "HP") { target = "Status9"; }
+        return target;
+    }
+
+    private int SkillList2(string targetStr)
+    {
+        int target = 0;
+        if (targetStr == "言いくるめ") { target = 11; }
+        if (targetStr == "医学") { target = 12; }
+        if (targetStr == "運転") { target = 13; }
+        if (targetStr == "応急手当") { target = 14; }
+        if (targetStr == "オカルト") { target = 15; }
+        if (targetStr == "回避") { target = 16; }
+        if (targetStr == "化学") { target = 17; }
+        if (targetStr == "鍵開け") { target = 18; }
+        if (targetStr == "隠す") { target = 19; }
+        if (targetStr == "隠れる") { target = 20; }
+        if (targetStr == "機械修理") { target = 21; }
+        if (targetStr == "聞き耳") { target = 22; }
+        if (targetStr == "芸術") { target = 23; }
+        if (targetStr == "経理") { target = 24; }
+        if (targetStr == "考古学") { target = 25; }
+        if (targetStr == "コンピューター") { target = 26; }
+        if (targetStr == "忍び歩き") { target = 27; }
+        if (targetStr == "写真術") { target = 28; }
+        if (targetStr == "重機械操作") { target = 29; }
+        if (targetStr == "乗馬") { target = 30; }
+        if (targetStr == "信用") { target = 31; }
+        if (targetStr == "心理学") { target = 32; }
+        if (targetStr == "人類学") { target = 33; }
+        if (targetStr == "水泳") { target = 34; }
+        if (targetStr == "製作") { target = 35; }
+        if (targetStr == "精神分析") { target = 36; }
+        if (targetStr == "生物学") { target = 37; }
+        if (targetStr == "説得") { target = 38; }
+        if (targetStr == "操縦") { target = 39; }
+        if (targetStr == "地質学") { target = 40; }
+        if (targetStr == "跳躍") { target = 41; }
+        if (targetStr == "追跡") { target = 42; }
+        if (targetStr == "電気修理") { target = 43; }
+        if (targetStr == "電子工学") { target = 44; }
+        if (targetStr == "天文学") { target = 45; }
+        if (targetStr == "投擲") { target = 46; }
+        if (targetStr == "登攀") { target = 47; }
+        if (targetStr == "図書館") { target = 48; }
+        if (targetStr == "ナビゲート") { target = 49; }
+        if (targetStr == "値切り") { target = 50; }
+        if (targetStr == "博物学") { target = 51; }
+        if (targetStr == "物理学") { target = 52; }
+        if (targetStr == "変装") { target = 53; }
+        if (targetStr == "法律") { target = 54; }
+        if (targetStr == "ほかの言語") { target = 55; }
+        if (targetStr == "母国語") { target = 56; }
+        if (targetStr == "マーシャルアーツ") { target = 57; }
+        if (targetStr == "目星") { target = 58; }
+        if (targetStr == "薬学") { target = 59; }
+        if (targetStr == "歴史") { target = 60; }
+        if (targetStr == "火器") { target = 61; }
+        if (targetStr == "格闘") { target = 62; }
+        if (targetStr == "武器術") { target = 63; }
+        if (targetStr == "クトゥルフ神話") { target = 10; }
+        if (targetStr == "STR") { target = 0; }
+        if (targetStr == "DEX") { target = 1; }
+        if (targetStr == "CON") { target = 2; }
+        if (targetStr == "POW") { target = 3; }
+        if (targetStr == "INT") { target = 4; }
+        if (targetStr == "EDU") { target = 5; }
+        if (targetStr == "SIZ") { target = 6; }
+        if (targetStr == "APP") { target = 7; }
+        if (targetStr == "MP") { target = 8; }
+        if (targetStr == "HP") { target = 9; }
         return target;
     }
 
