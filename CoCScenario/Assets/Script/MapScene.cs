@@ -140,12 +140,15 @@ public class MapScene : MonoBehaviour
             objIB[selectNum].GetComponent<IventButton>().buttonNum = selectNum;
             objIB[selectNum].GetComponent<Transform>().SetSiblingIndex(selectNum);
             for (int i = selectNum+1; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum++; }//追加分の後ろはボタン番号が１増える。
+            mapData.Insert(selectNum,"");
+            selectNum++;//前にボタンが入るので、selectNum自体も１プラスする。
         }
         if (selectNum == -1)//選択されたイベントがなければ末尾に追加
         {
             objIB.Insert(objIB.Count, Instantiate(objIvent) as GameObject);
             objIB[objIB.Count-1].transform.SetParent(parentObject.transform, false);
             objIB[objIB.Count-1].GetComponent<IventButton>().buttonNum = objIB.Count-1;
+            mapData.Add("");
         }
     }
 
@@ -164,11 +167,14 @@ public class MapScene : MonoBehaviour
     public void IventCreateButton()
     {
         string[] strs;
-        if (selectNum >= 0)
+        try
         {
             strs = mapData[selectNum].Replace("\r", "").Replace("\n", "").Split(',');
             objBGM.GetComponent<BGMManager>().chapterName = strs[11];
             GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "NovelScene");
+        }
+        catch
+        {           
         }
     }
 
