@@ -32219,7 +32219,8 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  batten: {fileID: 21300000, guid: c0f8e2b2d5f734c799b5d7041b85dca4, type: 3}
+  errorSE: {fileID: 8300000, guid: 79fabf36e2a83ae48b88683ce05bbba9, type: 3}
+  batten: {fileID: 21300000, guid: 6d5b1cae1865add45bedceb840e4c2b9, type: 3}
   objMake:
   - {fileID: 332151965}
   - {fileID: 1755846864}
@@ -34933,7 +34934,7 @@ MonoBehaviour:
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
-  m_ChildAlignment: 0
+  m_ChildAlignment: 2
   m_Spacing: 0
   m_ChildForceExpandWidth: 0
   m_ChildForceExpandHeight: 0

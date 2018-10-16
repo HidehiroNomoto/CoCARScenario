@@ -28,6 +28,7 @@ public class MapScene : MonoBehaviour
     string _FILE_HEADER;
     InputField[] inputField=new InputField[12];
     public GameObject objCCB;
+    public AudioClip errorSE;
 
     void Start()
     {
@@ -133,23 +134,13 @@ public class MapScene : MonoBehaviour
     public void IventAddButton()
     {
         //追加ボタンが押されたらイベントボタンを追加する。
-        if (selectNum >= 0)
-        {
-            objIB.Insert(selectNum, Instantiate(objIvent) as GameObject);
-            objIB[selectNum].transform.SetParent(parentObject.transform, false);
-            objIB[selectNum].GetComponent<IventButton>().buttonNum = selectNum;
-            objIB[selectNum].GetComponent<Transform>().SetSiblingIndex(selectNum);
-            for (int i = selectNum+1; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum++; }//追加分の後ろはボタン番号が１増える。
-            mapData.Insert(selectNum,"");
+            objIB.Insert(selectNum+1, Instantiate(objIvent) as GameObject);
+            objIB[selectNum+1].transform.SetParent(parentObject.transform, false);
+            objIB[selectNum+1].GetComponent<IventButton>().buttonNum = selectNum+1;
+            objIB[selectNum+1].GetComponent<Transform>().SetSiblingIndex(selectNum+1);
+            for (int i = selectNum+2; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum++; }//追加分の後ろはボタン番号が１増える。
+            mapData.Insert(selectNum+1,"");
             selectNum++;//前にボタンが入るので、selectNum自体も１プラスする。
-        }
-        if (selectNum == -1)//選択されたイベントがなければ末尾に追加
-        {
-            objIB.Insert(objIB.Count, Instantiate(objIvent) as GameObject);
-            objIB[objIB.Count-1].transform.SetParent(parentObject.transform, false);
-            objIB[objIB.Count-1].GetComponent<IventButton>().buttonNum = objIB.Count-1;
-            mapData.Add("");
-        }
     }
 
     public void IventDeleteButton()
@@ -161,6 +152,10 @@ public class MapScene : MonoBehaviour
             for (int i = selectNum; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum--; }//削除分の後ろはボタン番号が１減る。
             if (mapData.Count - 1 >= selectNum) { mapData.RemoveAt(selectNum); }
             selectNum = -1;
+        }
+        else
+        {
+            AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();
         }
     }
 
@@ -208,7 +203,7 @@ public class MapScene : MonoBehaviour
     {
         if (selectNum >= 0)
         {
-            if (mapData.Count <= selectNum){ for (int i = mapData.Count; i <= selectNum; i++) { mapData.Add(""); } }//mapDataの要素数をselectNumが越えたら配列の要素数を合わせて増やす。中身は空でOK。（イベント追加されるとmapData.Count以上の番号を持つイベントができるため）
+            if (mapData.Count <= selectNum) { for (int i = mapData.Count; i <= selectNum; i++) { mapData.Add(""); } }//mapDataの要素数をselectNumが越えたら配列の要素数を合わせて増やす。中身は空でOK。（イベント追加されるとmapData.Count以上の番号を持つイベントができるため）
             mapData[selectNum] = inputField[1].text + "," + inputField[2].text + "," + inputField[3].text + "," + inputField[4].text + "," + inputField[5].text + "," + inputField[6].text + "," + inputField[7].text + "," + inputField[8].text + "," + inputField[9].text + "," + inputField[10].text + "," + inputField[11].text + "," + inputField[0].text + ".txt\n";
             objIB[selectNum].GetComponentInChildren<Text>().text = MapDataToButton(mapData[selectNum]);
 
@@ -219,6 +214,10 @@ public class MapScene : MonoBehaviour
             zf.Password = Secret.SecretString.zipPass;
             ScenarioFileCheck(selectNum, zf);
             zf.Close();
+        }
+        else
+        {
+            AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();
         }
     }
 
