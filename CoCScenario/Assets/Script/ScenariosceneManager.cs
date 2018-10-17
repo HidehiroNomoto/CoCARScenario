@@ -6,7 +6,8 @@ using System.IO;
 using System.Collections.Generic;
 
 
-//PC用に、マップデータに開始時点の座標を入れる。
+//PC用に、マップデータに開始時点の座標を入れる。（内部的には座標のみ変数に入れるワンスイベントを突っ込む。）
+//本体側、自キャラ画像が設定されていない時にノベルシーンで呼び出して大丈夫？
 public class ScenariosceneManager : MonoBehaviour
 {
     const int STATUSNUM = 12;
@@ -27,7 +28,7 @@ public class ScenariosceneManager : MonoBehaviour
     List<GameObject> objCB = new List<GameObject>();
     List<GameObject> objGS = new List<GameObject>();
     List<string> commandData = new List<string>();
-    private string[] gFileName = new string[100];
+    private string[] gFileName = new string[99];
     private string[] sFileName = new string[40];
     public GameObject[] objMake = new GameObject[26];
     public int selectNum=-1;
@@ -35,7 +36,6 @@ public class ScenariosceneManager : MonoBehaviour
     string _FILE_HEADER;
     const int CHARACTER_Y = -300;
     const int BUTTON_NUM = 26;
-    //public GameObject objIvent;
     public GameObject objCommand;
     public GameObject parentObject;
     public GameObject objGSB;
@@ -53,6 +53,7 @@ public class ScenariosceneManager : MonoBehaviour
     public int[] backGraphLogTemp= {0,-1,-1,-1,-1,-1 };
     public string backBTLogTemp;
     public string[] backTLogTemp = new string[2];
+    public GameObject titleText;
 
     // Use this for initialization
     void Start()
@@ -68,6 +69,7 @@ public class ScenariosceneManager : MonoBehaviour
         objBGM = GameObject.Find("BGMManager").gameObject as GameObject;
         ReadCommandFileNum(@GetComponent<Utility>().GetAppPath() + @"\" + "[system]commandFileNum.txt");
         commandName = "[system]command1" + objBGM.GetComponent<BGMManager>().chapterName;
+        titleText.GetComponent<Text>().text = "command1" + "\n" + objBGM.GetComponent<BGMManager>().chapterName.Substring(0, objBGM.GetComponent<BGMManager>().chapterName.Length-4);
         StartScene();
     }
 
@@ -198,7 +200,7 @@ public class ScenariosceneManager : MonoBehaviour
         parentGS = GameObject.Find("GSContents");
         if (num == 2 || num==6 || num==7 || num==12)
         {
-            for (int i = 0; i < scenarioGraphic.Length; i++)
+            for (int i = 0; i < scenarioGraphic.Length-1; i++)
             {
                 if (scenarioGraphic[i] == null) { continue; }
                 objGS.Insert(objGS.Count, Instantiate(objGraSou) as GameObject);
@@ -212,11 +214,21 @@ public class ScenariosceneManager : MonoBehaviour
             {
                 objGS.Insert(objGS.Count, Instantiate(objGraSou) as GameObject);
                 objGS[objGS.Count - 1].transform.SetParent(parentGS.transform, false);
+                objGS[objGS.Count - 1].name = "GS99";
+                objGS[objGS.Count - 1].GetComponent<Image>().sprite = scenarioGraphic[99];
+                objGS[objGS.Count - 1].GetComponent<GSButton>().buttonNum = 99;
+                objGS[objGS.Count - 1].GetComponentInChildren<Text>().text = "＜プレイヤーキャラ＞";
+
+                objGS.Insert(objGS.Count, Instantiate(objGraSou) as GameObject);
+                objGS[objGS.Count - 1].transform.SetParent(parentGS.transform, false);
                 objGS[objGS.Count - 1].name = "GS-1";
                 objGS[objGS.Count - 1].GetComponent<Image>().sprite = batten;
                 objGS[objGS.Count - 1].GetComponent<GSButton>().buttonNum = - 1;
                 objGS[objGS.Count - 1].GetComponentInChildren<Text>().text = "＜出ている立ち絵を消す＞";
-            }//キャラ選択の場合、表示しないを選択したいことがある。それを×マークでフォロー。
+
+
+
+            }//キャラ選択の場合、表示しないを選択したいことがある。それを×マークでフォロー。自キャラを表示する場合も同様に。
         }
         if (num == 3 || num==5)
         {
@@ -234,17 +246,20 @@ public class ScenariosceneManager : MonoBehaviour
         //分岐コマンドの場合は分岐先表示を出す
         try//※コマンド選択せずにコマンド種別ボタンを押した時に無視できるようにtry入れておく
         {
-            if (num == 10) { objCB[selectNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓\r\n選択肢１→\r\n選択肢２→\r\n選択肢３→\r\n選択肢４→\r\n"; }
-            else if (num == 11) { objCB[selectNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓\r\nスペシャル→\r\n成功→\r\n失敗→"; }
-            else if (num == 12) { objCB[selectNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓\r\n特殊終了→\r\n全員殺害→\r\n一部捕縛→\r\n全員捕縛→\r\n気絶敗北→\r\n死亡敗北→"; }
-            else if (num == 13) { objCB[selectNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓\r\nフラグOn→\r\nフラグOff→"; }
-            else if (num == 17) { objCB[selectNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓\r\n範囲内→\r\n範囲外→"; }
-            else if (num == 20) { objCB[selectNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓\r\n含む→\r\n含まない→"; }
-            else { objCB[selectNum].transform.Find("NextSkip").GetComponent<Text>().text = ""; }
+            NextSkipMake(num, selectNum);
         }
         catch { }
+    }
 
-
+    private void NextSkipMake(int kindNum,int objCBNum)
+    {
+        if (kindNum == 10) { objCB[objCBNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓　　<color=white>" + (objCBNum + 1).ToString() + "</color>\r\n１→　　\r\n２→　　\r\n３→　　\r\n４→　　\r\n"; }
+        else if (kindNum == 11) { objCB[objCBNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓　　<color=white>" + (objCBNum + 1).ToString() + "</color>\r\nSP→　　\r\n成功→　　\r\n失敗→　　"; }
+        else if (kindNum == 12) { objCB[objCBNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓　　<color=white>" + (objCBNum + 1).ToString() + "</color>\r\n特殊→　　\r\n全殺→　\r\n捕縛→　\r\n全捕→　\r\n生負→　\r\n死負→　"; }
+        else if (kindNum == 13) { objCB[objCBNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓　　<color=white>" + (objCBNum + 1).ToString() + "</color>\r\nOn→　　\r\nOff→　　"; }
+        else if (kindNum == 17) { objCB[objCBNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓　　<color=white>" + (objCBNum + 1).ToString() + "</color>\r\n内→　　\r\n外→　　"; }
+        else if (kindNum == 20) { objCB[objCBNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓　　<color=white>" + (objCBNum + 1).ToString() + "</color>\r\n有→　　\r\n無→　　"; }
+        else { objCB[objCBNum].transform.Find("NextSkip").GetComponent<Text>().text = "<color=white>" + (objCBNum + 1).ToString() + "</color>"; }
     }
 
     //エクスプローラーのドラッグ＆ドロップ機能は使わない。
@@ -487,7 +502,7 @@ public class ScenariosceneManager : MonoBehaviour
                 {
                     scenarioGraphic[j] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f)); gFileName[j] = path; yield break;
                 }
-            }//-1しているのは指定100([99])番がPCイラスト用に確保してあるから
+            }
 
             //どちらでもなければ追加
             if (graphicNum<scenarioGraphic.Length-1)
@@ -575,7 +590,6 @@ public class ScenariosceneManager : MonoBehaviour
     //コマンドファイルを読み込む。
     private void LoadCommandData(string path)
     {
-        string[] separate;
         commandData.Clear();
         objCB.Clear();
         try
@@ -613,21 +627,22 @@ public class ScenariosceneManager : MonoBehaviour
                     //コマンドをボタンとして一覧に放り込む。
                     for (int i = 0; i < commandData.Count; i++)
                     {
-                        objCB.Add(Instantiate(objCommand) as GameObject);
-                        objCB[i].transform.SetParent(parentObject.transform, false);
-                        objCB[i].transform.Find("Text").GetComponent<Text>().text = commandData[i];
-                        objCB[i].GetComponent<CommandButton>().buttonNum = i;
+                        if (i < 90)//90以降は全部タイトル戻しで埋めるのでボタン表示しない
+                        {
+                            objCB.Add(Instantiate(objCommand) as GameObject);
+                            objCB[i].transform.SetParent(parentObject.transform, false);
+                            objCB[i].transform.Find("Text").GetComponent<Text>().text = commandData[i];
+                            objCB[i].GetComponent<CommandButton>().buttonNum = i;
 
-                        //分岐コマンドの場合は分岐先表示を出す
-                        if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Select:") { separate = commandData[i].Substring(7).Replace("\r","").Replace("\n","").Split(',');for (int j = 0; j < 4; j++) { if (separate[j] != "") { separate[j] = separate[j] + "→"; } } objCB[i].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\n" + separate[0] + "\r\n" + separate[1] + "\r\n" + separate[2] + "\r\n" + separate[3]; }
-                        if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Hantei:") { objCB[i].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\nスペシャル→\r\n成功→\r\n失敗→"; }
-                        if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Battle:") { objCB[i].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\n特殊終了→\r\n全員殺害→\r\n一部捕縛→\r\n全員捕縛→\r\n気絶敗北→\r\n死亡敗北→"; }
-                        if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "FlagBranch:") { objCB[i].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\nフラグOn→\r\nフラグOff→"; }
-                        if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "Difference:") { objCB[i].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\n範囲内→\r\n範囲外→"; }
-                        if (commandData[i].Length > 6 && commandData[i].Substring(0, 6) == "Equal:") { objCB[i].transform.Find("NextSkip").GetComponent<Text>().text = "←\r\n含む→\r\n含まない→"; }
-
-
-
+                            //分岐コマンドの場合は分岐先表示を出す
+                            if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Select:") { NextSkipMake(10, i); }
+                            else if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Hantei:") { NextSkipMake(11, i); }
+                            else if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Battle:") { NextSkipMake(12, i); }
+                            else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "FlagBranch:") { NextSkipMake(13, i); }
+                            else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "Difference:") { NextSkipMake(17, i); }
+                            else if (commandData[i].Length > 6 && commandData[i].Substring(0, 6) == "Equal:") { NextSkipMake(20, i); }
+                            else { NextSkipMake(0,i); }
+                        }
                     }
                 }
                 else
@@ -635,6 +650,7 @@ public class ScenariosceneManager : MonoBehaviour
                     objCB.Add(Instantiate(objCommand) as GameObject);
                     objCB[0].transform.SetParent(parentObject.transform, false);
                     commandData.Add("");
+                    objCB[0].transform.Find("NextSkip").GetComponent<Text>().text = "<color=white>1</color>";
                 }
             }
             catch { }
@@ -650,15 +666,27 @@ public class ScenariosceneManager : MonoBehaviour
     public void CommandAddButton()
     {
         //追加ボタンが押されたらコマンドボタンを追加する。
-        if (objCB.Count < 99)
+        if (objCB.Count < 90-1)//90コまで
         {
                 objCB.Insert(selectNum+1, Instantiate(objCommand) as GameObject);
                 commandData.Insert(selectNum+1, "");
                 objCB[selectNum+1].transform.SetParent(parentObject.transform, false);
                 objCB[selectNum+1].GetComponent<CommandButton>().buttonNum = selectNum+1;
                 objCB[selectNum+1].GetComponent<Transform>().SetSiblingIndex(selectNum+1);
-                for (int i = selectNum + 2; i < objCB.Count; i++) { objCB[i].GetComponent<CommandButton>().buttonNum++; }//追加分の後ろはボタン番号が１増える。
-                selectNum++;
+            NextSkipMake(0,selectNum+1);
+                for (int i = selectNum + 2; i < objCB.Count; i++)
+            {
+                objCB[i].GetComponent<CommandButton>().buttonNum++;
+
+                if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Select:") { NextSkipMake(10, i); }
+                else if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Hantei:") { NextSkipMake(11, i); }
+                else if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Battle:") { NextSkipMake(12, i); }
+                else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "FlagBranch:") { NextSkipMake(13, i); }
+                else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "Difference:") { NextSkipMake(17, i); }
+                else if (commandData[i].Length > 6 && commandData[i].Substring(0, 6) == "Equal:") { NextSkipMake(20, i); }
+                else { NextSkipMake(0, i); }
+            }//追加分の後ろはボタン番号が１増える。
+                selectNum++;           
         }
         else
         { AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();  }
@@ -670,7 +698,18 @@ public class ScenariosceneManager : MonoBehaviour
         {
             Destroy(objCB[selectNum]);
             objCB.RemoveAt(selectNum);
-            for (int i = selectNum; i < objCB.Count; i++) { objCB[i].GetComponent<CommandButton>().buttonNum--; }//削除分の後ろはボタン番号が１減る。
+            for (int i = selectNum; i < objCB.Count; i++)
+            {
+                objCB[i].GetComponent<CommandButton>().buttonNum--;
+
+                if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Select:") { NextSkipMake(10, i); }
+                else if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Hantei:") { NextSkipMake(11, i); }
+                else if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Battle:") { NextSkipMake(12, i); }
+                else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "FlagBranch:") { NextSkipMake(13, i); }
+                else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "Difference:") { NextSkipMake(17, i); }
+                else if (commandData[i].Length > 6 && commandData[i].Substring(0, 6) == "Equal:") { NextSkipMake(20, i); }
+                else { NextSkipMake(0, i); }
+            }//削除分の後ろはボタン番号が１減る。
             try { commandData.RemoveAt(selectNum); } catch { }
             selectNum = -1;
         }
@@ -745,10 +784,7 @@ public class ScenariosceneManager : MonoBehaviour
             for (int i = 0; i < BUTTON_NUM; i++) { objMake[i].SetActive(false); }
             selectNum = -1;
             LoadCommandData(commandName);
-
-
-
-
+            titleText.GetComponent<Text>().text = commandName.Replace("[system]", "").Replace(objBGM.GetComponent<BGMManager>().chapterName, "") + "\n" + objBGM.GetComponent<BGMManager>().chapterName.Substring(0, objBGM.GetComponent<BGMManager>().chapterName.Length - 4);
         }//一つ戻って、履歴からはそこを消す
     }
 
@@ -771,7 +807,8 @@ public class ScenariosceneManager : MonoBehaviour
         objCB.Clear();
         for (int i = 0; i < BUTTON_NUM; i++) { objMake[i].SetActive(false); }
         selectNum = -1;
-        LoadCommandData(commandName);    
+        LoadCommandData(commandName);
+        titleText.GetComponent<Text>().text = commandName.Replace("[system]","").Replace(objBGM.GetComponent<BGMManager>().chapterName, "") + "\n" + objBGM.GetComponent<BGMManager>().chapterName.Substring(0, objBGM.GetComponent<BGMManager>().chapterName.Length - 4);
     }
 
     //コマンドファイルを書き出す関数
@@ -784,7 +821,7 @@ public class ScenariosceneManager : MonoBehaviour
         string file= @GetComponent<Utility>().GetAppPath() + @"\" + commandName;
 
         //先にテキストファイルを一時的に書き出しておく。
-        for (int i = 0; i < commandData.Count; i++) { if (commandData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str = str + commandData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+        for (int i = 0; i < commandData.Count; i++) { if (commandData[i].Replace("\n", "").Replace("\r", "") == "") { str = str + "Title:(未設定コマンド。タイトルバックとして機能します)\r\n"; continue; } str = str + commandData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
         str = str + "[END]";
         File.WriteAllText(file, str);
 
@@ -821,7 +858,7 @@ public class ScenariosceneManager : MonoBehaviour
     //イベントファイルを書き出す関数
     private void AddIventGS(ICSharpCode.SharpZipLib.Zip.ZipFile zf)
     {
-        bool[] gF=new bool[scenarioGraphic.Length];
+        bool[] gF=new bool[scenarioGraphic.Length-1];
         bool[] sF = new bool[scenarioAudio.Length];
         //冒頭コマンドファイルを入れる。
         string str = "[system]command1" + objBGM.GetComponent<BGMManager>().chapterName + "\r\n";
@@ -837,13 +874,13 @@ public class ScenariosceneManager : MonoBehaviour
                     reader, System.Text.Encoding.GetEncoding("UTF-8"));
                 // テキストを取り出す
                 string text = sr.ReadToEnd();
-                for (int i = 0; i < scenarioGraphic.Length; i++)
+                for (int i = 0; i < scenarioGraphic.Length-1; i++)
                 {
-                    if (text.Contains("Back:" + i.ToString()) || text.Contains("Chara:" + i.ToString()) || text.Contains("Item:" + i.ToString()) || text.Contains("Battle:" + i.ToString())) { gF[i] = true; }
+                    if (text.Contains("\nBack:" + i.ToString()) || text.Contains("\nChara:" + i.ToString()) || text.Contains("\nItem:" + i.ToString()) || text.Contains("\nBattle:" + i.ToString())) { gF[i] = true; }
                 }
                 for (int i = 0; i < scenarioAudio.Length; i++)
                 {
-                    if (text.Contains("BGM:" + i.ToString()) || text.Contains("SE:" + i.ToString())) { sF[i]=true; }
+                    if (text.Contains("\nBGM:" + i.ToString()) || text.Contains("\nSE:" + i.ToString())) { sF[i]=true; }
                 }
                 //閉じる
                 sr.Close();
@@ -858,8 +895,8 @@ public class ScenariosceneManager : MonoBehaviour
         zf.Add(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName, Path.GetFileName(objBGM.GetComponent<BGMManager>().chapterName));
         
         //画像サウンドファイルの作成※コマンドファイルで使われていないモノは保存しない＋zipから読み込んだ（既に同じものがzipにある）ファイルは保存しない。（というかファイルじゃないので参照しても取得に失敗する）
-        for (int i = 0; i < gFileName.Length; i++) { if (gFileName[i] != Path.GetFileName(gFileName[i]) && gF[i]==true){ try { zf.Add(@GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ\" + Path.GetFileName(gFileName[i]), Path.GetFileName(gFileName[i])); } catch { } }  }//ファイルがなかったら（主に空き要素の場合）そのままスキップ
-        for (int i = 0; i < sFileName.Length; i++) { if (sFileName[i] != Path.GetFileName(sFileName[i]) && sF[i]==true) { try { zf.Add(@GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ\" + Path.GetFileName(sFileName[i]), Path.GetFileName(sFileName[i])); } catch { } } }
+        for (int i = 0; i < gFileName.Length; i++) { if (gFileName[i] != Path.GetFileName(gFileName[i]) && gF[i]==true){ try { zf.Add(@GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ\" + Path.GetFileName(gFileName[i]), Path.GetFileName(gFileName[i]));gFileName[i] = Path.GetFileName(gFileName[i]); } catch { } }  }//ファイルがなかったら（主に空き要素の場合）そのままスキップ
+        for (int i = 0; i < sFileName.Length; i++) { if (sFileName[i] != Path.GetFileName(sFileName[i]) && sF[i]==true) { try { zf.Add(@GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ\" + Path.GetFileName(sFileName[i]), Path.GetFileName(sFileName[i]));sFileName[i] = Path.GetFileName(sFileName[i]); } catch { } } }//一度更新したら、そのイベントを開いている間は同じデータを更新することはない。
     }
 
     private int SkillList2(string targetStr)
