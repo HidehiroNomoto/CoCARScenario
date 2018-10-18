@@ -74,7 +74,7 @@ Application.platform == RuntimePlatform.LinuxPlayer)
         string file2 = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]password.txt";
         //先に[system]mapdata.txtと[system]password.txtを一時的に書き出しておく。
 
-        str = ",,,,,,,,,,,導入シーン(導入は発生条件なしで作るのがお勧め).txt\r\n[END]";
+        str = ",,,,,,,,,,,[system]FirstPlace.txt\r\n,,,,,,,,,,,導入シーン(導入は発生条件なしで作るのがお勧め).txt\r\n[END]";
         System.IO.File.WriteAllText(file, str);
         System.IO.File.WriteAllText(file2, scenarioPass);
 

@@ -6,8 +6,6 @@ using System.IO;
 using System.Collections.Generic;
 
 
-//PC用に、マップデータに開始時点の座標を入れる。（内部的には座標のみ変数に入れるワンスイベントを突っ込む。）
-//本体側、自キャラ画像が設定されていない時にノベルシーンで呼び出して大丈夫？
 public class ScenariosceneManager : MonoBehaviour
 {
     const int STATUSNUM = 12;
@@ -30,12 +28,11 @@ public class ScenariosceneManager : MonoBehaviour
     List<string> commandData = new List<string>();
     private string[] gFileName = new string[99];
     private string[] sFileName = new string[40];
-    public GameObject[] objMake = new GameObject[26];
+    public GameObject[] objMake = new GameObject[27];
     public int selectNum=-1;
     private string commandName;
     string _FILE_HEADER;
     const int CHARACTER_Y = -300;
-    const int BUTTON_NUM = 26;
     public GameObject objCommand;
     public GameObject parentObject;
     public GameObject objGSB;
@@ -157,36 +154,40 @@ public class ScenariosceneManager : MonoBehaviour
 
     private void SaveCommandFileNum()
     {
-        string str = commandFileNum.ToString();
-        //ZIP書庫のパス
-        string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
-        //書庫に追加するファイルのパス
-        string file = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]commandFileNum.txt";
+        try
+        {
+            string str = commandFileNum.ToString();
+            //ZIP書庫のパス
+            string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
+            //書庫に追加するファイルのパス
+            string file = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]commandFileNum.txt";
 
-        //先にテキストファイルを一時的に書き出しておく。
-        File.WriteAllText(file, str);
+            //先にテキストファイルを一時的に書き出しておく。
+            File.WriteAllText(file, str);
 
-        //ZipFileオブジェクトの作成
-        ICSharpCode.SharpZipLib.Zip.ZipFile zf =
-            new ICSharpCode.SharpZipLib.Zip.ZipFile(zipPath);
-        zf.Password = Secret.SecretString.zipPass;
-        //ZipFileの更新を開始
-        zf.BeginUpdate();
+            //ZipFileオブジェクトの作成
+            ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+                new ICSharpCode.SharpZipLib.Zip.ZipFile(zipPath);
+            zf.Password = Secret.SecretString.zipPass;
+            //ZipFileの更新を開始
+            zf.BeginUpdate();
 
-        //ZIP内のエントリの名前を決定する 
-        string f = Path.GetFileName(file);
-        //ZIP書庫に一時的に書きだしておいたファイルを追加する
-        zf.Add(file, f);
-        //イベントファイルと画像サウンドファイルを追加
-        AddIventGS(zf);
-        //ZipFileの更新をコミット
-        zf.CommitUpdate();
+            //ZIP内のエントリの名前を決定する 
+            string f = Path.GetFileName(file);
+            //ZIP書庫に一時的に書きだしておいたファイルを追加する
+            zf.Add(file, f);
+            //イベントファイルと画像サウンドファイルを追加
+            AddIventGS(zf);
+            //ZipFileの更新をコミット
+            zf.CommitUpdate();
 
-        //閉じる
-        zf.Close();
+            //閉じる
+            zf.Close();
 
-        //一時的に書きだしたファイルを消去する。
-        File.Delete(file);
+            //一時的に書きだしたファイルを消去する。
+            File.Delete(file);
+        }
+        catch { }
     }
 
 
@@ -194,7 +195,7 @@ public class ScenariosceneManager : MonoBehaviour
     {
         foreach (GameObject tempObject in objGS) { Destroy(tempObject); }
         objGS.Clear();
-        for (int i = 0; i < BUTTON_NUM; i++) { objMake[i].SetActive(false); }
+        for (int i = 0; i < objMake.Length; i++) { objMake[i].SetActive(false); }
         objMake[num].SetActive(true);
         selectGS = -1;
         parentGS = GameObject.Find("GSContents");
@@ -296,13 +297,14 @@ public class ScenariosceneManager : MonoBehaviour
         if (num == 20) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "" || GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { return; } commandText = "Equal:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
         if (num == 21) { commandText = "Lost:"; }
         if (num == 22) { commandText = "Title:"; }
-        if (num == 23) { commandText = "Map:" + (GameObject.Find("Toggle").GetComponent<Toggle>().isOn).ToString().ToLower(); }
+        if (num == 23) { if (GameObject.Find("Toggle").GetComponent<Toggle>().isOn == false) { commandText = "Map:Once"; } else { commandText = "Map:Anytime"; } }
         if (num == 24) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { commandText = "NextFile:" + "[system]NoName" + commandFileNum.ToString() + objBGM.GetComponent<BGMManager>().chapterName; } else { commandText = "NextFile:" + "[system]" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + objBGM.GetComponent<BGMManager>().chapterName; } }
         if (num == 25) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "" ){ GameObject.Find("InputFieldText").GetComponent<InputField>().text = "0"; }
             if (GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = "0"; }
             if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = "0"; }
             if (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = "3"; }
             commandText = "BlackOut:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
+        if (num == 26) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "0"; } if (GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = "0"; } commandText = "PlaceChange:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text; }
         if (selectNum >= 0)
         {
             commandData[selectNum] = commandText;
@@ -685,8 +687,7 @@ public class ScenariosceneManager : MonoBehaviour
                 else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "Difference:") { NextSkipMake(17, i); }
                 else if (commandData[i].Length > 6 && commandData[i].Substring(0, 6) == "Equal:") { NextSkipMake(20, i); }
                 else { NextSkipMake(0, i); }
-            }//追加分の後ろはボタン番号が１増える。
-                selectNum++;           
+            }//追加分の後ろはボタン番号が１増える。         
         }
         else
         { AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();  }
@@ -750,12 +751,13 @@ public class ScenariosceneManager : MonoBehaviour
             if (strs[0] == "Equal") { if (objMake[20].activeSelf == false) { CommandButton(20); } GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; }
             if (strs[0] == "Lost") { if (objMake[21].activeSelf == false) { CommandButton(21); } }
             if (strs[0] == "Title") { if (objMake[22].activeSelf == false) { CommandButton(22); } }
-            if (strs[0] == "Map") { if (objMake[23].activeSelf == false) { CommandButton(23); } if (strs[1] == "true") { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = true; } else { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = false; } }
+            if (strs[0] == "Map") { if (objMake[23].activeSelf == false) { CommandButton(23); } if (strs[1] == "Once") { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = false; } else { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = true; } }
             if (strs[0] == "NextFile") { if (objMake[24].activeSelf == false) { CommandButton(24); } GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1].Substring(8,strs[1].Length-8-objBGM.GetComponent<BGMManager>().chapterName.Length); }
             if (strs[0] == "BlackOut") { if (objMake[25].activeSelf == false) { CommandButton(25); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = strs[2]; GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[3]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[4]; }
+            if (strs[0] == "PlaceChange") { if (objMake[26].activeSelf == false) { CommandButton(26); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = strs[2]; }
             if (strs[0] == "" || strs[0]==null)
             {
-                for (int i = 0; i < BUTTON_NUM; i++) { objMake[i].SetActive(false); }
+                for (int i = 0; i < objMake.Length; i++) { objMake[i].SetActive(false); }
                 foreach (GameObject tempObject in objGS) { Destroy(tempObject); }
                 objGS.Clear();
             }
@@ -781,7 +783,7 @@ public class ScenariosceneManager : MonoBehaviour
             backTLog.RemoveAt(backTLog.Count - 1);
             foreach (GameObject tempObject in objCB) { Destroy(tempObject); }
             objCB.Clear();
-            for (int i = 0; i < BUTTON_NUM; i++) { objMake[i].SetActive(false); }
+            for (int i = 0; i < objMake.Length; i++) { objMake[i].SetActive(false); }
             selectNum = -1;
             LoadCommandData(commandName);
             titleText.GetComponent<Text>().text = commandName.Replace("[system]", "").Replace(objBGM.GetComponent<BGMManager>().chapterName, "") + "\n" + objBGM.GetComponent<BGMManager>().chapterName.Substring(0, objBGM.GetComponent<BGMManager>().chapterName.Length - 4);
@@ -805,7 +807,7 @@ public class ScenariosceneManager : MonoBehaviour
         commandName = "[system]" + path + objBGM.GetComponent<BGMManager>().chapterName;//次のファイルのコマンドファイル名に入れ替え
         foreach (GameObject tempObject in objCB) { Destroy(tempObject); }
         objCB.Clear();
-        for (int i = 0; i < BUTTON_NUM; i++) { objMake[i].SetActive(false); }
+        for (int i = 0; i < objMake.Length; i++) { objMake[i].SetActive(false); }
         selectNum = -1;
         LoadCommandData(commandName);
         titleText.GetComponent<Text>().text = commandName.Replace("[system]","").Replace(objBGM.GetComponent<BGMManager>().chapterName, "") + "\n" + objBGM.GetComponent<BGMManager>().chapterName.Substring(0, objBGM.GetComponent<BGMManager>().chapterName.Length - 4);
@@ -814,43 +816,43 @@ public class ScenariosceneManager : MonoBehaviour
     //コマンドファイルを書き出す関数
     public void SaveCommandFile()
     {
-        string str = commandName + "\r\n";//一行目はファイル名を示す部分。
-        //ZIP書庫のパス
-        string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
-        //書庫に追加するファイルのパス
-        string file= @GetComponent<Utility>().GetAppPath() + @"\" + commandName;
-
-        //先にテキストファイルを一時的に書き出しておく。
-        for (int i = 0; i < commandData.Count; i++) { if (commandData[i].Replace("\n", "").Replace("\r", "") == "") { str = str + "Title:(未設定コマンド。タイトルバックとして機能します)\r\n"; continue; } str = str + commandData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
-        str = str + "[END]";
-        File.WriteAllText(file, str);
-
-        //ZipFileオブジェクトの作成
-        ICSharpCode.SharpZipLib.Zip.ZipFile zf =
-            new ICSharpCode.SharpZipLib.Zip.ZipFile(zipPath);
-        zf.Password = Secret.SecretString.zipPass;
-        //ZipFileの更新を開始
-        zf.BeginUpdate();
-
-        //ZIP内のエントリの名前を決定する 
-        string f = Path.GetFileName(file);
-        //ZIP書庫に一時的に書きだしておいたファイルを追加する
-        zf.Add(file, f);
-        zf.CommitUpdate();
-        //イベントファイルと画像サウンドファイルを追加
-        zf.BeginUpdate();
-        AddIventGS(zf);
-        //ZipFileの更新をコミット
-        zf.CommitUpdate();
-
-        //閉じる
-        zf.Close();
-
-        //一時的に書きだしたファイルを消去する。
         try
         {
-            File.Delete(file);
-            File.Delete(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName);
+            string str = commandName + "\r\n";//一行目はファイル名を示す部分。
+                                              //ZIP書庫のパス
+            string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
+            //書庫に追加するファイルのパス
+            string file = @GetComponent<Utility>().GetAppPath() + @"\" + commandName;
+
+            //先にテキストファイルを一時的に書き出しておく。
+            for (int i = 0; i < commandData.Count; i++) { if (commandData[i].Replace("\n", "").Replace("\r", "") == "") { str = str + "Title:(未設定コマンド。タイトルバックとして機能します)\r\n"; continue; } str = str + commandData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+            str = str + "[END]";
+            File.WriteAllText(file, str);
+
+            //ZipFileオブジェクトの作成
+            ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+                new ICSharpCode.SharpZipLib.Zip.ZipFile(zipPath);
+            zf.Password = Secret.SecretString.zipPass;
+            //ZipFileの更新を開始
+            zf.BeginUpdate();
+
+            //ZIP内のエントリの名前を決定する 
+            string f = Path.GetFileName(file);
+            //ZIP書庫に一時的に書きだしておいたファイルを追加する
+            zf.Add(file, f);
+            zf.CommitUpdate();
+            //イベントファイルと画像サウンドファイルを追加
+            zf.BeginUpdate();
+            AddIventGS(zf);
+            //ZipFileの更新をコミット
+            zf.CommitUpdate();
+
+            //閉じる
+            zf.Close();
+
+            //一時的に書きだしたファイルを消去する。
+                File.Delete(file);
+                File.Delete(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName);
         }
         catch { }
     }
