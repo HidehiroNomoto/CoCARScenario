@@ -284,7 +284,7 @@ public class MapScene : MonoBehaviour
 
                 //先にテキストファイルを一時的に書き出しておく。
                 str = str + System.IO.Path.GetFileName(file2);
-                str2 = str2 + "PlaceChange:" + inputField[12].text + "," + inputField[13].text + "\r\nBackText:シナリオ初期データ設定中\r\nMap:Once\r\n[END]";
+                str2 = str2 + "PlaceChange:" + inputField[12].text + "," + inputField[13].text + "\r\nBackText:シナリオ初期データ設定中,false\r\nMap:Once\r\n[END]";
 
                 System.IO.File.WriteAllText(file, str);
                 System.IO.File.WriteAllText(file2, str2);
