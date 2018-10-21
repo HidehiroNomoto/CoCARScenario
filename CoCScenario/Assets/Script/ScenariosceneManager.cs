@@ -28,7 +28,7 @@ public class ScenariosceneManager : MonoBehaviour
     List<string> commandData = new List<string>();
     private string[] gFileName = new string[99];
     private string[] sFileName = new string[40];
-    public GameObject[] objMake = new GameObject[27];
+    public GameObject[] objMake = new GameObject[28];
     public int selectNum=-1;
     private string commandName;
     string _FILE_HEADER;
@@ -269,8 +269,8 @@ public class ScenariosceneManager : MonoBehaviour
     public void CommandDecide(int num)
     {
         string commandText="";
-        if (num == 0) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "　"; } if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "　"; } commandText = "Text:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText").GetComponent<InputField>().text; }
-        if (num == 1) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "　"; } commandText = "BackText:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text; }
+        if (num == 0) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "　"; } if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "　"; } commandText = "Text:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText").GetComponent<InputField>().text; if (GameObject.Find("Toggle").GetComponent<Toggle>().isOn == false) { commandText = commandText + ",false"; } else { commandText = commandText + ",true"; } }
+        if (num == 1) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "　"; } commandText = "BackText:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text; if (GameObject.Find("Toggle").GetComponent<Toggle>().isOn == false) { commandText = commandText + ",false"; } else { commandText = commandText + ",true"; } }
         if (num == 2) { if (selectGS == -1) { return; } commandText = "Back:" + selectGS.ToString(); }
         if (num == 3) { if (selectGS == -1) { return; } if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "0"; } commandText = "BGM:" + selectGS.ToString() + "," + GameObject.Find("InputFieldName").GetComponent<InputField>().text;}
         if (num == 4) { if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "0"; } commandText = "BGMStop:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text; }
@@ -305,6 +305,7 @@ public class ScenariosceneManager : MonoBehaviour
             if (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = "3"; }
             commandText = "BlackOut:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
         if (num == 26) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "0"; } if (GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = "0"; } commandText = "PlaceChange:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text; }
+        if (num == 27) { if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "0"; } commandText = "Wait:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text; }
         if (selectNum >= 0)
         {
             commandData[selectNum] = commandText;
@@ -728,8 +729,8 @@ public class ScenariosceneManager : MonoBehaviour
             char[] tmp= {',',':'};
             strs = commandData[selectNum].Replace("\n","").Replace("\r","").Split(tmp);
             try { objGSB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f); } catch { }
-            if (strs[0] == "Text") { if (objMake[0].activeSelf == false) { CommandButton(0); } GameObject.Find("InputFieldName").GetComponent<InputField>().text=strs[1]; GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[2]; }
-            if (strs[0] == "BackText") { if (objMake[1].activeSelf == false) { CommandButton(1); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; }
+            if (strs[0] == "Text") { if (objMake[0].activeSelf == false) { CommandButton(0); } GameObject.Find("InputFieldName").GetComponent<InputField>().text=strs[1]; GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[2]; if (strs[3] == "true") { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = true; } else { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = false; } }
+            if (strs[0] == "BackText") { if (objMake[1].activeSelf == false) { CommandButton(1); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; if (strs[2] == "true") { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = true; } else { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = false; } }
             if (strs[0] == "Back") { if (objMake[2].activeSelf == false) { CommandButton(2); } selectGS = int.Parse(strs[1]); try { objGSB = GameObject.Find("GS" + selectGS.ToString()); objGSB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 0); } catch { } } 
             if (strs[0] == "BGM"){ if (objMake[3].activeSelf == false) { CommandButton(3); } selectGS = int.Parse(strs[1]); try { objGSB = GameObject.Find("GS" + selectGS.ToString()); objGSB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 0); } catch { } GameObject.Find("InputFieldName").GetComponent<InputField>().text = strs[2]; }
             if (strs[0] == "BGMStop") { if (objMake[4].activeSelf == false) { CommandButton(4); } GameObject.Find("InputFieldName").GetComponent<InputField>().text = strs[1]; }
@@ -755,6 +756,7 @@ public class ScenariosceneManager : MonoBehaviour
             if (strs[0] == "NextFile") { if (objMake[24].activeSelf == false) { CommandButton(24); } GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1].Substring(8,strs[1].Length-8-objBGM.GetComponent<BGMManager>().chapterName.Length); }
             if (strs[0] == "BlackOut") { if (objMake[25].activeSelf == false) { CommandButton(25); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = strs[2]; GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[3]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[4]; }
             if (strs[0] == "PlaceChange") { if (objMake[26].activeSelf == false) { CommandButton(26); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = strs[2]; }
+            if (strs[0] == "Wait") { if (objMake[27].activeSelf == false) { CommandButton(27); } GameObject.Find("InputFieldName").GetComponent<InputField>().text = strs[1]; }
             if (strs[0] == "" || strs[0]==null)
             {
                 for (int i = 0; i < objMake.Length; i++) { objMake[i].SetActive(false); }

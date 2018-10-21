@@ -204,7 +204,7 @@ public class MapScene : MonoBehaviour
                 FirstPlace.SetActive(true);
 
                     //閲覧するエントリ
-                    string extractFile = "[system]FirstPlace.txt";
+                    string extractFile = "[system]FirstPlaceCommand1.txt";
 
                     //ZipFileオブジェクトの作成
                     ICSharpCode.SharpZipLib.Zip.ZipFile zf =
@@ -275,16 +275,19 @@ public class MapScene : MonoBehaviour
             {
                 //座標を突っ込むだけのイベントファイルを作成。内容は座標設定→マップワンス
                 string str = "[system]FirstPlace.txt\r\n";//一行目はファイル名を示す部分。
+                string str2= "[system]FirstPlaceCommand1.txt\r\n";//一行目はファイル名を示す部分。
                                                           //ZIP書庫のパス
                 string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
                 //書庫に追加するファイルのパス
                 string file = @GetComponent<Utility>().GetAppPath() + @"\[system]FirstPlace.txt";
+                string file2 = @GetComponent<Utility>().GetAppPath() + @"\[system]FirstPlaceCommand1.txt";
 
                 //先にテキストファイルを一時的に書き出しておく。
-                str = str + "PlaceChange:" + inputField[12].text + "," + inputField[13].text + "\r\nMap:Once\r\n[END]";
+                str = str + System.IO.Path.GetFileName(file2);
+                str2 = str2 + "PlaceChange:" + inputField[12].text + "," + inputField[13].text + "\r\nBackText:シナリオ初期データ設定中\r\nMap:Once\r\n[END]";
 
                 System.IO.File.WriteAllText(file, str);
-
+                System.IO.File.WriteAllText(file2, str2);
                 //ZipFileオブジェクトの作成
                 ICSharpCode.SharpZipLib.Zip.ZipFile zf =
                     new ICSharpCode.SharpZipLib.Zip.ZipFile(zipPath);
@@ -294,8 +297,10 @@ public class MapScene : MonoBehaviour
 
                 //ZIP内のエントリの名前を決定する 
                 string f = System.IO.Path.GetFileName(file);
+                string f2= System.IO.Path.GetFileName(file2);
                 //ZIP書庫に一時的に書きだしておいたファイルを追加する
                 zf.Add(file, f);
+                zf.Add(file2, f2);
                 //ZipFileの更新をコミット
                 zf.CommitUpdate();
 
@@ -306,6 +311,7 @@ public class MapScene : MonoBehaviour
                 try
                 {
                     System.IO.File.Delete(file);
+                    System.IO.File.Delete(file2);
                 }
                 catch { }
                 //（未）を外す
