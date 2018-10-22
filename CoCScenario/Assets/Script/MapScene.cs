@@ -77,6 +77,7 @@ public class MapScene : MonoBehaviour
     //目次ファイルを読み込む。
     private void LoadMapData(string path)
     {
+        string[] strs;
         try
         {
         //閲覧するエントリ
@@ -123,6 +124,32 @@ public class MapScene : MonoBehaviour
                 }
             }
             catch{ }
+
+            ze = zf.GetEntry("[system]Command1PC版スタート地点.txt");
+            try
+            {
+                if (ze != null)
+                {
+                    //閲覧するZIPエントリのStreamを取得
+                    System.IO.Stream reader = zf.GetInputStream(ze);
+                    //文字コードを指定してStreamReaderを作成
+                    System.IO.StreamReader sr = new System.IO.StreamReader(
+                        reader, System.Text.Encoding.GetEncoding("UTF-8"));
+                    // テキストを取り出す
+                    string text = sr.ReadToEnd();
+
+                    // 読み込んだ目次テキストファイルからstring配列を作成する
+                    strs = text.Split('\n');
+                    strs = strs[1].Substring(12).Replace("\r", "").Replace("\n", "").Split(',');
+                    //閉じる
+                    sr.Close();
+                    reader.Close();
+                    latitude = Convert.ToDouble(strs[0]); longitude = Convert.ToDouble(strs[1]);
+                    objIB[0].GetComponentInChildren<Text>().text = "[system]PC版スタート地点　緯:" + latitude.ToString() + ",経:" + longitude.ToString();
+                }
+            }
+            catch { }
+
         //閉じる
         zf.Close();
         }
@@ -166,6 +193,8 @@ public class MapScene : MonoBehaviour
         {
             try
             {
+                InputDecideButton();
+                MakeMapDataFile();
                 strs = mapData[selectNum].Replace("\r", "").Replace("\n", "").Split(',');
                 objBGM.GetComponent<BGMManager>().chapterName = strs[11];
                 GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "NovelScene");
@@ -204,7 +233,7 @@ public class MapScene : MonoBehaviour
                 FirstPlace.SetActive(true);
 
                     //閲覧するエントリ
-                    string extractFile = "[system]FirstPlaceCommand1.txt";
+                    string extractFile = "[system]Command1PC版スタート地点.txt";
 
                     //ZipFileオブジェクトの作成
                     ICSharpCode.SharpZipLib.Zip.ZipFile zf =
@@ -231,14 +260,15 @@ public class MapScene : MonoBehaviour
                             reader.Close();
 
                     //（未）を外す
-                    objIB[selectNum].GetComponentInChildren<Text>().text = "[system]FirstPlace";
-                        }
+                    mapData[selectNum] = ",,,,,,,,,,,[system]PC版スタート地点.txt";
+                }
                         else
                         {
                     strs = new string[2];
                             strs[0] = "35.010348"; strs[1] = "135.768738";
-                    objIB[selectNum].GetComponentInChildren<Text>().text = "(未)[system]FirstPlace";
+                    mapData[selectNum] = ",,,,,,,,,,,[system]PC版スタート地点.txt";
                 }
+
                 //閉じる
                 zf.Close();
 
@@ -270,17 +300,18 @@ public class MapScene : MonoBehaviour
                 zf.Password = Secret.SecretString.zipPass;
                 ScenarioFileCheck(selectNum, zf);
                 zf.Close();
+                latitude = Convert.ToDouble(inputField[1].text); longitude = Convert.ToDouble(inputField[2].text);
             }
             else if (selectNum == 0)
             {
                 //座標を突っ込むだけのイベントファイルを作成。内容は座標設定→マップワンス
-                string str = "[system]FirstPlace.txt\r\n";//一行目はファイル名を示す部分。
-                string str2= "[system]FirstPlaceCommand1.txt\r\n";//一行目はファイル名を示す部分。
+                string str = "";//イベントファイルの１行目はファイル名入れない
+                string str2= "[system]Command1PC版スタート地点.txt\r\n";//一行目はファイル名を示す部分。
                                                           //ZIP書庫のパス
                 string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
                 //書庫に追加するファイルのパス
-                string file = @GetComponent<Utility>().GetAppPath() + @"\[system]FirstPlace.txt";
-                string file2 = @GetComponent<Utility>().GetAppPath() + @"\[system]FirstPlaceCommand1.txt";
+                string file = @GetComponent<Utility>().GetAppPath() + @"\[system]PC版スタート地点.txt";
+                string file2 = @GetComponent<Utility>().GetAppPath() + @"\[system]Command1PC版スタート地点.txt";
 
                 //先にテキストファイルを一時的に書き出しておく。
                 str = str + System.IO.Path.GetFileName(file2);
@@ -315,12 +346,14 @@ public class MapScene : MonoBehaviour
                 }
                 catch { }
                 //（未）を外す
-                objIB[selectNum].GetComponentInChildren<Text>().text = "[system]FirstPlace";
+                latitude = Convert.ToDouble(inputField[12].text); longitude = Convert.ToDouble(inputField[13].text);
+                objIB[selectNum].GetComponentInChildren<Text>().text = "[system]PC版スタート地点　緯:" + latitude.ToString() + ",経:" + longitude.ToString();
             }
             else
             {
                 AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();
             }
+            try { GetMap(); } catch { }
         }
         catch { }
     }
