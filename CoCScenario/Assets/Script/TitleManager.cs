@@ -31,7 +31,6 @@ Application.platform == RuntimePlatform.LinuxPlayer)
         //BGM再生
         DontDestroyOnLoad(GameObject.Find("BGMManager"));//BGMマネージャーのオブジェクトはタイトル画面で作ってゲーム終了までそれを使用。
         GameObject.Find("BGMManager").GetComponent<AudioSource>().volume = PlayerPrefs.GetFloat("BGMVolume", 0.8f);
-        GetComponent<Utility>().BGMPlay(Resources.Load<AudioClip>("TitleBGM"));
         GameObject.Find("BGMManager").GetComponent<BGMManager>().bgmChange(true, 0);//BGMManager内部変数の初期化
     }
 

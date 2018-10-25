@@ -161,13 +161,16 @@ public class MapScene : MonoBehaviour
 
     public void IventAddButton()
     {
-        //追加ボタンが押されたらイベントボタンを追加する。
-            objIB.Insert(selectNum+1, Instantiate(objIvent) as GameObject);
-            objIB[selectNum+1].transform.SetParent(parentObject.transform, false);
-            objIB[selectNum+1].GetComponent<IventButton>().buttonNum = selectNum+1;
-            objIB[selectNum+1].GetComponent<Transform>().SetSiblingIndex(selectNum+1);
-            for (int i = selectNum+2; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum++; }//追加分の後ろはボタン番号が１増える。
-            mapData.Insert(selectNum+1,"");
+        if (selectNum >= 0)//初期位置設定の前にイベントボタンを追加させない。selectNum==-1で追加すると追加できてしまうのでそのケースを排除。
+        {
+            //追加ボタンが押されたらイベントボタンを追加する。
+            objIB.Insert(selectNum + 1, Instantiate(objIvent) as GameObject);
+            objIB[selectNum + 1].transform.SetParent(parentObject.transform, false);
+            objIB[selectNum + 1].GetComponent<IventButton>().buttonNum = selectNum + 1;
+            objIB[selectNum + 1].GetComponent<Transform>().SetSiblingIndex(selectNum + 1);
+            for (int i = selectNum + 2; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum++; }//追加分の後ろはボタン番号が１増える。
+            mapData.Insert(selectNum + 1, "");
+        }
     }
 
     public void IventDeleteButton()
