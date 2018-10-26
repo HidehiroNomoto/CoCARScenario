@@ -984,7 +984,9 @@ public class ScenariosceneManager : MonoBehaviour
 
     private void TextDraw(string name,string text)
     {
+        objBackText.gameObject.SetActive(false);
         objTextBox.gameObject.SetActive(true);
+        text = text.Replace("[PC]", PlayerPrefs.GetString("[system]PlayerCharacterName", "あなた"));
         objText.GetComponent<Text>().text = text;
         if (name == "[PC]")
         {
@@ -1021,5 +1023,12 @@ public class ScenariosceneManager : MonoBehaviour
     private void ObjSizeChangeToGraph(int position,Sprite sprite)
     {
         objCharacter[position].GetComponent<RectTransform>().sizeDelta=new Vector2(sprite.pixelsPerUnit * sprite.bounds.size.x, sprite.pixelsPerUnit * sprite.bounds.size.y);
+    }
+
+    public void MapBackButton(int num)
+    {
+        CommandDecide(num);//ネクストファイルの「決定」ボタンを押したのと同じ効果。
+        SaveCommandFile();
+        GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "MapScene");
     }
 }
