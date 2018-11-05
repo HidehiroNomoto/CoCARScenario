@@ -32,7 +32,7 @@ public class ScenariosceneManager : MonoBehaviour
     public int selectNum=-1;
     private string commandName;
     string _FILE_HEADER;
-    const int CHARACTER_Y = -300;
+    const int CHARACTER_Y = -615;
     public GameObject objCommand;
     public GameObject parentObject;
     public GameObject objGSB;
@@ -315,7 +315,7 @@ public class ScenariosceneManager : MonoBehaviour
         if (num == 27) { if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "0"; } commandText = "Wait:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text; }
         if (selectNum >= 0)
         {
-            commandData[selectNum] = commandText;
+            commandData[selectNum] = commandText.Replace("\n","[system]改行");
             objCB[selectNum].transform.Find("Text").GetComponent<Text>().text = commandData[selectNum].Replace("</size>","");
             SceneGraphic();
             NextSkipMake(num, selectNum);
@@ -737,8 +737,8 @@ public class ScenariosceneManager : MonoBehaviour
             char[] tmp= {',',':'};
             strs = commandData[selectNum].Replace("\n","").Replace("\r","").Split(tmp);
             try { objGSB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f); } catch { }
-            if (strs[0] == "Text") { if (objMake[0].activeSelf == false) { CommandButton(0); } GameObject.Find("InputFieldName").GetComponent<InputField>().text=strs[1]; GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[2]; if (strs[3] == "true") { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = true; } else { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = false; } }
-            if (strs[0] == "BackText") { if (objMake[1].activeSelf == false) { CommandButton(1); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; if (strs[2] == "true") { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = true; } else { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = false; } }
+            if (strs[0] == "Text") { if (objMake[0].activeSelf == false) { CommandButton(0); } GameObject.Find("InputFieldName").GetComponent<InputField>().text=strs[1]; GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[2].Replace("[system]改行","\n"); if (strs[3] == "true") { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = true; } else { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = false; } }
+            if (strs[0] == "BackText") { if (objMake[1].activeSelf == false) { CommandButton(1); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1].Replace("[system]改行", "\n"); if (strs[2] == "true") { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = true; } else { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = false; } }
             if (strs[0] == "Back") { if (objMake[2].activeSelf == false) { CommandButton(2); } selectGS = int.Parse(strs[1]); try { objGSB = GameObject.Find("GS" + selectGS.ToString()); objGSB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 0); } catch { } } 
             if (strs[0] == "BGM"){ if (objMake[3].activeSelf == false) { CommandButton(3); } selectGS = int.Parse(strs[1]); try { objGSB = GameObject.Find("GS" + selectGS.ToString()); objGSB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 0); } catch { } GameObject.Find("InputFieldName").GetComponent<InputField>().text = strs[2]; }
             if (strs[0] == "BGMStop") { if (objMake[4].activeSelf == false) { CommandButton(4); } GameObject.Find("InputFieldName").GetComponent<InputField>().text = strs[1]; }
@@ -986,7 +986,7 @@ public class ScenariosceneManager : MonoBehaviour
     {
         objBackText.gameObject.SetActive(false);
         objTextBox.gameObject.SetActive(true);
-        text = text.Replace("[PC]", PlayerPrefs.GetString("[system]PlayerCharacterName", "あなた"));
+        text = text.Replace("[system]改行", "\r\n").Replace("[PC]", PlayerPrefs.GetString("[system]PlayerCharacterName", "あなた"));
         objText.GetComponent<Text>().text = text;
         if (name == "[PC]")
         {
@@ -1003,6 +1003,7 @@ public class ScenariosceneManager : MonoBehaviour
         //背景テキスト表示の際は通常テキスト欄は消す
         objTextBox.gameObject.SetActive(false);
         objBackText.gameObject.SetActive(true);
+        text = text.Replace("[system]改行","\r\n");
         objBackText.GetComponent<Text>().text = text;
     }
 
