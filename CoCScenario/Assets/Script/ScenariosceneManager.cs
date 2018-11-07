@@ -96,6 +96,7 @@ public class ScenariosceneManager : MonoBehaviour
             if (separate[0].Length > 9 && separate[0].Substring(0, 9) == "BackText:") { BackTextDraw(separate[0].Substring(9).Replace("\r", "").Replace("\n", ""));backBTLogTemp = separate[0].Substring(9).Replace("\r", "").Replace("\n", "");backTLogTemp[0] = ""; backTLogTemp[1] = ""; }
             if (separate[0].Length > 6 && separate[0].Substring(0, 6) == "Chara:") { CharacterDraw(int.Parse(separate[0].Substring(6)),int.Parse(separate[1].Replace("\r", "").Replace("\n", ""))); backGraphLogTemp[int.Parse(separate[1])] = int.Parse(separate[0].Substring(6)); }
             if (separate[0].Length > 5 && separate[0].Substring(0, 5) == "Back:") { BackDraw(int.Parse(separate[0].Substring(5).Replace("\r", "").Replace("\n", ""))); backGraphLogTemp[0] = int.Parse(separate[0].Substring(5).Replace("\r", "").Replace("\n", "")); }
+            if (separate[0].Length > 7 && separate[0].Substring(0, 7) == "Battle:") { for (int j = 1; j <= 5; j++) { CharacterDraw(-1, j); backGraphLogTemp[j] = -1; } }
         }
     }
 
@@ -708,6 +709,7 @@ public class ScenariosceneManager : MonoBehaviour
         {
             Destroy(objCB[selectNum]);
             objCB.RemoveAt(selectNum);
+            try { commandData.RemoveAt(selectNum); } catch { }
             for (int i = selectNum; i < objCB.Count; i++)
             {
                 objCB[i].GetComponent<CommandButton>().buttonNum--;
@@ -720,7 +722,7 @@ public class ScenariosceneManager : MonoBehaviour
                 else if (commandData[i].Length > 6 && commandData[i].Substring(0, 6) == "Equal:") { NextSkipMake(20, i); }
                 else { NextSkipMake(0, i); }
             }//削除分の後ろはボタン番号が１減る。
-            try { commandData.RemoveAt(selectNum); } catch { }
+            //try { commandData.RemoveAt(selectNum); } catch { }
             selectNum = -1;
         }
         else
@@ -1003,7 +1005,7 @@ public class ScenariosceneManager : MonoBehaviour
         //背景テキスト表示の際は通常テキスト欄は消す
         objTextBox.gameObject.SetActive(false);
         objBackText.gameObject.SetActive(true);
-        text = text.Replace("[system]改行","\r\n");
+        text = text.Replace("[system]改行","\r\n").Replace("[PC]", PlayerPrefs.GetString("[system]PlayerCharacterName", "あなた"));
         objBackText.GetComponent<Text>().text = text;
     }
 
