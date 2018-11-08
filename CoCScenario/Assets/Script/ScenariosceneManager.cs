@@ -51,6 +51,9 @@ public class ScenariosceneManager : MonoBehaviour
     public string backBTLogTemp;
     public string[] backTLogTemp = new string[2];
     public GameObject titleText;
+    public int selectBefore=-1;
+    public List<int> multiSelect = new List<int>();
+
 
     // Use this for initialization
     void Start()
@@ -740,7 +743,27 @@ public class ScenariosceneManager : MonoBehaviour
                 else if (commandData[i].Length > 6 && commandData[i].Substring(0, 6) == "Equal:") { NextSkipMake(20, i); }
                 else { NextSkipMake(0, i); }
             }//削除分の後ろはボタン番号が１減る。
-            //try { commandData.RemoveAt(selectNum); } catch { }
+
+            for (int k = 0; k < multiSelect.Count; k++) { if (selectNum < multiSelect[k]) { multiSelect[k]--; } }
+            for (int j = 0; j < multiSelect.Count; j++)
+            {
+                Destroy(objCB[multiSelect[j]]);
+                objCB.RemoveAt(multiSelect[j]);
+                try { commandData.RemoveAt(multiSelect[j]); } catch { }
+                for (int i = selectNum; i < objCB.Count; i++)
+                {
+                    objCB[i].GetComponent<CommandButton>().buttonNum--;
+
+                    if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Select:") { NextSkipMake(10, i); }
+                    else if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Hantei:") { NextSkipMake(11, i); }
+                    else if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Battle:") { NextSkipMake(12, i); }
+                    else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "FlagBranch:") { NextSkipMake(13, i); }
+                    else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "Difference:") { NextSkipMake(17, i); }
+                    else if (commandData[i].Length > 6 && commandData[i].Substring(0, 6) == "Equal:") { NextSkipMake(20, i); }
+                    else { NextSkipMake(0, i); }
+                }//削除分の後ろはボタン番号が１減る。
+                for (int k = 0; k < multiSelect.Count; k++) { if (multiSelect[j] < multiSelect[k]) { multiSelect[k]--; } }
+            }
             selectNum = -1;
         }
         else

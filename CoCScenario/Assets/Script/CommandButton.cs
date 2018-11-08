@@ -27,5 +27,45 @@ public class CommandButton : MonoBehaviour {
         this.GetComponent<Image>().color = new Color(1.0f, 1.0f, 0);
         s1.objCCB = this.gameObject;
         s1.SetCommand();
+        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+        {
+            if (s1.selectBefore >= 0)
+            {
+                if (s1.selectNum >= 0)
+                {
+                    if (s1.selectNum > s1.selectBefore)
+                    {
+                        for (int i = s1.selectBefore; i < s1.selectNum; i++) { s1.multiSelect.Add(i); s1.objCB[i].GetComponent<Image>().color = new Color(1.0f, 1.0f, 0); }
+                    }
+                    if (s1.selectNum < s1.selectBefore)
+                    {
+                        for (int i = s1.selectBefore; i > s1.selectNum; i--) { s1.multiSelect.Add(i); s1.objCB[i].GetComponent<Image>().color = new Color(1.0f, 1.0f, 0); }
+                    }
+                    s1.selectBefore = -1;
+                }
+                else
+                {
+                    foreach (GameObject tmpObj in s1.objCB) { if (tmpObj != s1.objCB[s1.selectNum]) { tmpObj.GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f); } }
+                }
+            }
+            else
+            {
+                if (s1.selectNum >= 0)
+                {
+                    s1.selectBefore = s1.selectNum;
+                    foreach (GameObject tmpObj in s1.objCB) { if (tmpObj != s1.objCB[s1.selectNum]) { tmpObj.GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f); } }
+                    s1.multiSelect.Clear();
+                }//スタート座標を複数選択に含まれると困るので、0は抜く。
+            }
+        }
+        else
+        {
+            s1.selectBefore = -1;
+            s1.multiSelect.Clear();
+            foreach (GameObject tmpObj in s1.objCB) { if (tmpObj != s1.objCB[s1.selectNum]) { tmpObj.GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f); } }
+        }
+
+
+
     }
 }

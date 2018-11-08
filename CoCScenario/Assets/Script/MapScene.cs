@@ -27,9 +27,10 @@ public class MapScene : MonoBehaviour
     public int selectNum = -1;
     string _FILE_HEADER;
     public InputField[] inputField=new InputField[14];
-    public GameObject objCCB;
     public AudioClip errorSE;
     public GameObject FirstPlace;
+    public int selectBefore=-1;
+    public List<int> multiSelect = new List<int>();
 
     void Start()
     {
@@ -187,12 +188,22 @@ public class MapScene : MonoBehaviour
 
     public void IventDeleteButton()
     {
+        List<int> tmp = new List<int>();
         if (selectNum > 0)
         {
             Destroy(objIB[selectNum]);
             objIB.RemoveAt(selectNum);
             for (int i = selectNum; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum--; }//削除分の後ろはボタン番号が１減る。
             if (mapData.Count - 1 >= selectNum) { mapData.RemoveAt(selectNum); }
+            for (int k = 0; k < multiSelect.Count; k++) { if (selectNum < multiSelect[k]) { multiSelect[k]--; } }
+            for (int j=0;j<multiSelect.Count;j++)
+            {
+                Destroy(objIB[multiSelect[j]]);
+                objIB.RemoveAt(multiSelect[j]);
+                for (int i = multiSelect[j]; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum--; }//削除分の後ろはボタン番号が１減る。
+                if (mapData.Count - 1 >= multiSelect[j]) { mapData.RemoveAt(multiSelect[j]); }
+                for (int k = 0; k < multiSelect.Count; k++) { if (multiSelect[j] < multiSelect[k]) { multiSelect[k]--; } }
+            }
             selectNum = -1;
         }
         else
