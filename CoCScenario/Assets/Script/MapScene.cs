@@ -170,6 +170,18 @@ public class MapScene : MonoBehaviour
             objIB[selectNum + 1].GetComponent<Transform>().SetSiblingIndex(selectNum + 1);
             for (int i = selectNum + 2; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum++; }//追加分の後ろはボタン番号が１増える。
             mapData.Insert(selectNum + 1, "");
+            selectNum++;
+        }
+        else
+        {
+            selectNum = 0;
+            objIB.Insert(selectNum + 1, Instantiate(objIvent) as GameObject);
+            objIB[selectNum + 1].transform.SetParent(parentObject.transform, false);
+            objIB[selectNum + 1].GetComponent<IventButton>().buttonNum = selectNum + 1;
+            objIB[selectNum + 1].GetComponent<Transform>().SetSiblingIndex(selectNum + 1);
+            for (int i = selectNum + 2; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum++; }//追加分の後ろはボタン番号が１増える。
+            mapData.Insert(selectNum + 1, "");
+            selectNum++;
         }
     }
 
@@ -185,9 +197,19 @@ public class MapScene : MonoBehaviour
         }
         else
         {
+            if (selectNum == 0) { GameObject.Find("Error").GetComponent<Text>().text ="スタート地点設定イベントは消去できません。"; }
+            if (selectNum < 0) { GameObject.Find("Error").GetComponent<Text>().text = "イベントが選択されていません。"; }
             AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();
+            StartCoroutine(ErrorWait());
         }
     }
+
+    private IEnumerator ErrorWait()
+    {
+        for (int i = 0; i < 200; i++) { yield return null; }
+        GameObject.Find("Error").GetComponent<Text>().text = "";
+    }
+
 
     public void IventCreateButton()
     {
@@ -205,6 +227,13 @@ public class MapScene : MonoBehaviour
             catch
             {
             }
+        }
+        else
+        {
+            if (selectNum == 0) { GameObject.Find("Error").GetComponent<Text>().text = "スタート地点設定イベントは消去できません。"; }
+            if (selectNum < 0) { GameObject.Find("Error").GetComponent<Text>().text = "イベントが選択されていません。"; }
+            AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();
+            StartCoroutine(ErrorWait());
         }
     }
 
@@ -354,7 +383,9 @@ public class MapScene : MonoBehaviour
             }
             else
             {
+                GameObject.Find("Error").GetComponent<Text>().text = "イベントが選択されていません。";
                 AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();
+                StartCoroutine(ErrorWait());
             }
             try { GetMap(); } catch { }
         }

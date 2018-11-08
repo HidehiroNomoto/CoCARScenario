@@ -316,10 +316,16 @@ public class ScenariosceneManager : MonoBehaviour
         if (num == 27) { if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "0"; } commandText = "Wait:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text; }
         if (selectNum >= 0)
         {
-            commandData[selectNum] = commandText.Replace("\n","[system]改行");
-            objCB[selectNum].transform.Find("Text").GetComponent<Text>().text = commandData[selectNum].Replace("</size>","");
+            commandData[selectNum] = commandText.Replace("\n", "[system]改行");
+            objCB[selectNum].transform.Find("Text").GetComponent<Text>().text = commandData[selectNum].Replace("</size>", "");
             SceneGraphic();
             NextSkipMake(num, selectNum);
+        }
+        else
+        {
+            GameObject.Find("Error").GetComponent<Text>().text = "コマンドが選択されていません。";
+            AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();
+            StartCoroutine(ErrorWait());
         }
     }
 
@@ -697,10 +703,22 @@ public class ScenariosceneManager : MonoBehaviour
                 else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "Difference:") { NextSkipMake(17, i); }
                 else if (commandData[i].Length > 6 && commandData[i].Substring(0, 6) == "Equal:") { NextSkipMake(20, i); }
                 else { NextSkipMake(0, i); }
-            }//追加分の後ろはボタン番号が１増える。         
+            }//追加分の後ろはボタン番号が１増える。
+
+            selectNum++;
         }
         else
-        { AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();  }
+        {
+            AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();
+            GameObject.Find("Error").GetComponent<Text>().text = "コマンド数オーバーです。次ファイルに移ってください。"; 
+            StartCoroutine(ErrorWait());
+        }
+    }
+
+    private IEnumerator ErrorWait()
+    {
+        for (int i = 0; i < 200; i++) { yield return null; }
+        GameObject.Find("Error").GetComponent<Text>().text = "";
     }
 
     public void CommandDeleteButton()
@@ -727,7 +745,9 @@ public class ScenariosceneManager : MonoBehaviour
         }
         else
         {
+            GameObject.Find("Error").GetComponent<Text>().text = "コマンドが選択されていません。";
             AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();
+            StartCoroutine(ErrorWait());
         }
     }
 

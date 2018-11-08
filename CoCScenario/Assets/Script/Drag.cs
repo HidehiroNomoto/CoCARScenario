@@ -86,9 +86,9 @@ public class Drag : MonoBehaviour
                     m1.mapData[afterSelect] = tmp;//最後に入れる
                     m1.objIB[afterSelect].GetComponentInChildren<Text>().text = tmp2;
                 }
+                m1.selectNum = afterSelect;
+                m1.objIB[m1.selectNum].GetComponent<IventButton>().PushIventButton();
             }
-            m1.selectNum = afterSelect;
-            m1.objIB[m1.selectNum].GetComponent<IventButton>().PushIventButton();
         }
         if (this.name.Contains("Command"))
         {
@@ -122,9 +122,10 @@ public class Drag : MonoBehaviour
                     s1.commandData[afterSelect] = tmp;//最後に入れる
                     s1.objCB[afterSelect].GetComponentInChildren<Text>().text = tmp2;
                 }
+                s1.selectNum = afterSelect;
+                s1.objCB[s1.selectNum].GetComponent<CommandButton>().PushCommandButton();
             }
-            s1.selectNum = afterSelect;
-            s1.objCB[s1.selectNum].GetComponent<CommandButton>().PushCommandButton();
+
             for (int i = 0; i < s1.objCB.Count; i++)
             {
                 if (s1.commandData[i].Length > 7 && s1.commandData[i].Substring(0, 7) == "Select:") { s1.NextSkipMake(10, i); }
