@@ -23,9 +23,9 @@ public class ScenariosceneManager : MonoBehaviour
     GameObject objBackText;
     GameObject objName;
     GameObject objBGM;
-    List<GameObject> objCB = new List<GameObject>();
+    public List<GameObject> objCB = new List<GameObject>();
     List<GameObject> objGS = new List<GameObject>();
-    List<string> commandData = new List<string>();
+    public List<string> commandData = new List<string>();
     private string[] gFileName = new string[99];
     private string[] sFileName = new string[40];
     public GameObject[] objMake = new GameObject[28];
@@ -257,7 +257,7 @@ public class ScenariosceneManager : MonoBehaviour
         catch { }
     }
 
-    private void NextSkipMake(int kindNum,int objCBNum)
+    public void NextSkipMake(int kindNum,int objCBNum)
     {
         string[] strs;
         string str="";
@@ -306,7 +306,7 @@ public class ScenariosceneManager : MonoBehaviour
         if (num == 21) { commandText = "Lost:"; }
         if (num == 22) { commandText = "Title:"; }
         if (num == 23) { if (GameObject.Find("Toggle").GetComponent<Toggle>().isOn == false) { commandText = "Map:Once"; } else { commandText = "Map:Anytime"; } }
-        if (num == 24) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") {commandFileNum++;SaveCommandFileNum(); commandText = "NextFile:" + "[system]NoName" + commandFileNum.ToString() + objBGM.GetComponent<BGMManager>().chapterName; } else { commandText = "NextFile:" + "[system]" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + objBGM.GetComponent<BGMManager>().chapterName; } }
+        if (num == 24) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") {commandFileNum++;SaveCommandFileNum(); commandText = "NextFile:" + "[system]NoName" + commandFileNum.ToString() + ".txt"; } else { commandText = "NextFile:" + "[system]" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + ".txt"; } }
         if (num == 25) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "" ){ GameObject.Find("InputFieldText").GetComponent<InputField>().text = "0"; }
             if (GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = "0"; }
             if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = "0"; }
@@ -763,7 +763,7 @@ public class ScenariosceneManager : MonoBehaviour
             if (strs[0] == "Lost") { if (objMake[21].activeSelf == false) { CommandButton(21); } }
             if (strs[0] == "Title") { if (objMake[22].activeSelf == false) { CommandButton(22); } }
             if (strs[0] == "Map") { if (objMake[23].activeSelf == false) { CommandButton(23); } if (strs[1] == "Once") { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = false; } else { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = true; } }
-            if (strs[0] == "NextFile") { if (objMake[24].activeSelf == false) { CommandButton(24); } GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1].Substring(8,strs[1].Length-8-objBGM.GetComponent<BGMManager>().chapterName.Length); }
+            if (strs[0] == "NextFile") { if (objMake[24].activeSelf == false) { CommandButton(24); } GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1].Substring(8,strs[1].Length-12); }
             if (strs[0] == "BlackOut") { if (objMake[25].activeSelf == false) { CommandButton(25); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = strs[2]; GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[3]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[4]; }
             if (strs[0] == "PlaceChange") { if (objMake[26].activeSelf == false) { CommandButton(26); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = strs[2]; }
             if (strs[0] == "Wait") { if (objMake[27].activeSelf == false) { CommandButton(27); } GameObject.Find("InputFieldName").GetComponent<InputField>().text = strs[1]; }

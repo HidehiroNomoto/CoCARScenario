@@ -17,12 +17,12 @@ public class MapScene : MonoBehaviour
     private int zoom = 16;
     private float targetX=0;
     private float targetY=0;
-    List<string> mapData=new List<string>();
+    public List<string> mapData=new List<string>();
     private bool sceneChange = false;
     GameObject mapImageObj;
     public GameObject objIvent;
     GameObject objBGM;
-    List<GameObject> objIB = new List<GameObject>();
+    public List<GameObject> objIB = new List<GameObject>();
     GameObject parentObject;
     public int selectNum = -1;
     string _FILE_HEADER;
