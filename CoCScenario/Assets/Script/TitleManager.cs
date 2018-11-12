@@ -69,11 +69,11 @@ Application.platform == RuntimePlatform.LinuxPlayer)
     private void ZipMake(string scenarioName,string scenarioPass)
     {
         string str="[END]";
-        string file = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]mapdata.txt";
-        string file2 = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]password.txt";
+        string file = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]mapdata[system].txt";
+        string file2 = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]password[system].txt";
         //先に[system]mapdata.txtと[system]password.txtを一時的に書き出しておく。
 
-        str = ",,,,,,,,,,,[system]PC版スタート地点.txt\r\n,,,,,,,,,,,導入シーン(導入は発生条件なしで作るのがお勧め).txt\r\n[END]";
+        str = ",,,,,,,,,,,[system]PC版スタート地点[system].txt\r\n,,,,,,,,,,,[system]導入シーン(導入は発生条件なしで作るのがお勧め).txt\r\n[END]";
         System.IO.File.WriteAllText(file, str);
         System.IO.File.WriteAllText(file2, scenarioPass);
 
@@ -85,8 +85,8 @@ Application.platform == RuntimePlatform.LinuxPlayer)
         zf.Password = Secret.SecretString.zipPass;
         //mapdataファイルだけ入れておく()
         zf.BeginUpdate();
-        zf.Add(file, "[system]mapdata.txt");
-        zf.Add(file2, "[system]password.txt");
+        zf.Add(file, "[system]mapdata[system].txt");
+        zf.Add(file2, "[system]password[system].txt");
         zf.CommitUpdate();
 
         //閉じる
@@ -105,7 +105,7 @@ Application.platform == RuntimePlatform.LinuxPlayer)
         try
         {
             //閲覧するエントリ
-            string extractFile = "[system]password.txt";
+            string extractFile = "[system]password[system].txt";
 
             //ZipFileオブジェクトの作成
             ICSharpCode.SharpZipLib.Zip.ZipFile zf =
@@ -131,6 +131,7 @@ Application.platform == RuntimePlatform.LinuxPlayer)
                 }
             }
             catch { }
+
             //閉じる
             zf.Close();
         }

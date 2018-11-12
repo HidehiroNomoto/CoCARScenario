@@ -40,7 +40,7 @@ public class MapScene : MonoBehaviour
         longitude=PlayerPrefs.GetFloat("longitude",135.768738f); latitude = PlayerPrefs.GetFloat("latitude", 35.010348f);
         mapImageObj = GameObject.Find("mapImage").gameObject as GameObject;
         objBGM= GameObject.Find("BGMManager").gameObject as GameObject;
-        LoadMapData("[system]mapdata.txt");
+        LoadMapData("[system]mapdata[system].txt");
         GetMap();
     }
 
@@ -126,28 +126,28 @@ public class MapScene : MonoBehaviour
             }
             catch{ }
 
-            ze = zf.GetEntry("[system]Command1PC版スタート地点.txt");
+            ze = zf.GetEntry("[system]command1[system]PC版スタート地点[system].txt");
             try
             {
-                if (ze != null)
-                {
-                    //閲覧するZIPエントリのStreamを取得
-                    System.IO.Stream reader = zf.GetInputStream(ze);
-                    //文字コードを指定してStreamReaderを作成
-                    System.IO.StreamReader sr = new System.IO.StreamReader(
-                        reader, System.Text.Encoding.GetEncoding("UTF-8"));
-                    // テキストを取り出す
-                    string text = sr.ReadToEnd();
+            if (ze != null)
+            {
+                //閲覧するZIPエントリのStreamを取得
+                System.IO.Stream reader = zf.GetInputStream(ze);
+                //文字コードを指定してStreamReaderを作成
+                System.IO.StreamReader sr = new System.IO.StreamReader(
+                    reader, System.Text.Encoding.GetEncoding("UTF-8"));
+                // テキストを取り出す
+                string text = sr.ReadToEnd();
 
-                    // 読み込んだ目次テキストファイルからstring配列を作成する
-                    strs = text.Split('\n');
-                    strs = strs[1].Substring(12).Replace("\r", "").Replace("\n", "").Split(',');
-                    //閉じる
-                    sr.Close();
-                    reader.Close();
-                    latitude = Convert.ToDouble(strs[0]); longitude = Convert.ToDouble(strs[1]);
-                    objIB[0].GetComponentInChildren<Text>().text = "[system]PC版スタート地点　緯:" + latitude.ToString() + ",経:" + longitude.ToString();
-                }
+                // 読み込んだ目次テキストファイルからstring配列を作成する
+                strs = text.Split('\n');
+                strs = strs[1].Substring(12).Replace("\r", "").Replace("\n", "").Split(',');
+                //閉じる
+                sr.Close();
+                reader.Close();
+                latitude = Convert.ToDouble(strs[0]); longitude = Convert.ToDouble(strs[1]);
+                objIB[0].GetComponentInChildren<Text>().text = "PC版スタート地点　緯:" + latitude.ToString() + ",経:" + longitude.ToString();
+            }
             }
             catch { }
 
@@ -257,7 +257,7 @@ public class MapScene : MonoBehaviour
             {
                 FirstPlace.SetActive(false);
                 strs = mapData[selectNum].Replace("\r","").Replace("\n","").Split(',');
-                inputField[0].text = strs[11].Substring(0, strs[11].Length - 4);
+                inputField[0].text = strs[11].Substring(0, strs[11].Length - 4).Replace("[system]","");
                 inputField[1].text = strs[0];
                 inputField[2].text = strs[1];
                 inputField[3].text = strs[2];
@@ -276,7 +276,7 @@ public class MapScene : MonoBehaviour
                 FirstPlace.SetActive(true);
 
                     //閲覧するエントリ
-                    string extractFile = "[system]Command1PC版スタート地点.txt";
+                    string extractFile = "[system]command1[system]PC版スタート地点[system].txt";
 
                     //ZipFileオブジェクトの作成
                     ICSharpCode.SharpZipLib.Zip.ZipFile zf =
@@ -302,14 +302,13 @@ public class MapScene : MonoBehaviour
                             sr.Close();
                             reader.Close();
 
-                    //（未）を外す
-                    mapData[selectNum] = ",,,,,,,,,,,[system]PC版スタート地点.txt";
+                    mapData[selectNum] = ",,,,,,,,,,,[system]PC版スタート地点[system].txt";
                 }
                         else
                         {
                     strs = new string[2];
                             strs[0] = "35.010348"; strs[1] = "135.768738";
-                    mapData[selectNum] = ",,,,,,,,,,,[system]PC版スタート地点.txt";
+                    mapData[selectNum] = ",,,,,,,,,,,[system]PC版スタート地点[system].txt";
                 }
 
                 //閉じる
@@ -333,7 +332,7 @@ public class MapScene : MonoBehaviour
             if (selectNum > 0)
             {
                 if (mapData.Count <= selectNum) { for (int i = mapData.Count; i <= selectNum; i++) { mapData.Add(""); } }//mapDataの要素数をselectNumが越えたら配列の要素数を合わせて増やす。中身は空でOK。（イベント追加されるとmapData.Count以上の番号を持つイベントができるため）
-                mapData[selectNum] = inputField[1].text + "," + inputField[2].text + "," + inputField[3].text + "," + inputField[4].text + "," + inputField[5].text + "," + inputField[6].text + "," + inputField[7].text + "," + inputField[8].text + "," + inputField[9].text + "," + inputField[10].text + "," + inputField[11].text + "," + inputField[0].text + ".txt\n";
+                mapData[selectNum] = inputField[1].text + "," + inputField[2].text + "," + inputField[3].text + "," + inputField[4].text + "," + inputField[5].text + "," + inputField[6].text + "," + inputField[7].text + "," + inputField[8].text + "," + inputField[9].text + "," + inputField[10].text + "," + inputField[11].text + ",[system]" + inputField[0].text + ".txt\n";
                 objIB[selectNum].GetComponentInChildren<Text>().text = MapDataToButton(mapData[selectNum]);
 
                 //ファイルチェックして（未）をつける
@@ -349,12 +348,12 @@ public class MapScene : MonoBehaviour
             {
                 //座標を突っ込むだけのイベントファイルを作成。内容は座標設定→マップワンス
                 string str = "";//イベントファイルの１行目はファイル名入れない
-                string str2= "[system]Command1PC版スタート地点.txt\r\n";//一行目はファイル名を示す部分。
+                string str2= "[system]command1[system]PC版スタート地点[system].txt\r\n";//一行目はファイル名を示す部分。
                                                           //ZIP書庫のパス
                 string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
                 //書庫に追加するファイルのパス
-                string file = @GetComponent<Utility>().GetAppPath() + @"\[system]PC版スタート地点.txt";
-                string file2 = @GetComponent<Utility>().GetAppPath() + @"\[system]Command1PC版スタート地点.txt";
+                string file = @GetComponent<Utility>().GetAppPath() + @"\[system]PC版スタート地点[system].txt";
+                string file2 = @GetComponent<Utility>().GetAppPath() + @"\[system]command1[system]PC版スタート地点[system].txt";
 
                 //先にテキストファイルを一時的に書き出しておく。
                 str = str + System.IO.Path.GetFileName(file2);
@@ -390,7 +389,7 @@ public class MapScene : MonoBehaviour
                 catch { }
                 //（未）を外す
                 latitude = Convert.ToDouble(inputField[12].text); longitude = Convert.ToDouble(inputField[13].text);
-                objIB[selectNum].GetComponentInChildren<Text>().text = "[system]PC版スタート地点　緯:" + latitude.ToString() + ",経:" + longitude.ToString();
+                objIB[selectNum].GetComponentInChildren<Text>().text = "PC版スタート地点　緯:" + latitude.ToString() + ",経:" + longitude.ToString();
             }
             else
             {
@@ -409,7 +408,7 @@ public class MapScene : MonoBehaviour
         string[] strs;
         try
         {
-            strs = mapdata.Replace("\r", "").Replace("\n", "").Split(',');
+            strs = mapdata.Replace("\r", "").Replace("\n", "").Replace("[system]","").Split(',');
             if (strs[11].Length>4) { strs[11] = strs[11].Substring(0,strs[11].Length-4); }
             if (strs[0].Length > 0) { strs[0] = " 緯:" + strs[0]; }
             if (strs[1].Length > 0) { strs[1] = " 経:" + strs[1]; }
@@ -439,7 +438,7 @@ public class MapScene : MonoBehaviour
             //ZIP書庫のパス
             string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
             //書庫に追加するファイルのパス
-            string file = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]mapdata.txt";
+            string file = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]mapdata[system].txt";
 
             //先に[system]mapdata.txtを一時的に書き出しておく。
             for (int i = 0; i < mapData.Count; i++) { if (mapData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str = str + mapData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
