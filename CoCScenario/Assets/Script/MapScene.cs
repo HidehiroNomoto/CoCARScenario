@@ -31,6 +31,9 @@ public class MapScene : MonoBehaviour
     public GameObject FirstPlace;
     public int selectBefore=-1;
     public List<int> multiSelect = new List<int>();
+    public bool URBool=false;
+    private List<string> undoList = new List<string>();
+    private int undoListNum = 0;
 
     void Start()
     {
@@ -46,7 +49,75 @@ public class MapScene : MonoBehaviour
 
     void Update()
     {
+        if (Input.GetKey(KeyCode.LeftControl))
+        {
+            if (Input.GetKey(KeyCode.Z))
+            {
+                if (URBool == false) { UndoRedoButton(true); URBool = true; }
+            }
+            else if (Input.GetKey(KeyCode.Y))
+            {
+                if (URBool == false) { UndoRedoButton(false); URBool = true; }
+            }
+            else
+            {
+                URBool = false;
+            }
+        }
+        else
+        {
+            URBool = false;
+        }
     }
+
+    public void UndoRedoButton(bool undoFlag)
+    {
+        string str;
+        try
+        {
+            if (undoFlag == true)
+            {
+                str = undoList[undoListNum - 1];
+                undoListNum--;
+            }
+            else
+            {
+                str = undoList[undoListNum + 1];
+                undoListNum++;
+            }
+            mapData.Clear();
+            for (int i = 0; i < objIB.Count; i++) { Destroy(objIB[i]); }
+            objIB.Clear();
+
+            // 読み込んだ目次テキストファイルからstring配列を作成する
+            mapData.AddRange(str.Split('\n'));
+            mapData.RemoveAt(mapData.Count - 1);//最後の行は空白なので消す
+            for (int i = 0; i < mapData.Count; i++)
+            {
+                objIB.Add(Instantiate(objIvent) as GameObject);
+                objIB[i].transform.SetParent(parentObject.transform, false);
+                objIB[i].GetComponentInChildren<Text>().text = MapDataToButton(mapData[i]);
+                objIB[i].GetComponent<IventButton>().buttonNum = i;
+                //ZipFileオブジェクトの作成
+                ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+                    new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
+                zf.Password = Secret.SecretString.zipPass;
+                ScenarioFileCheck(i, zf);
+                zf.Close();
+            }
+        }
+        catch
+        {
+            if (undoFlag == true) { GameObject.Find("Error").GetComponent<Text>().text = "これ以上戻れません。"; }
+            if (undoFlag == false) { GameObject.Find("Error").GetComponent<Text>().text = "これ以上進めません。"; }
+            StartCoroutine(ErrorWait());
+        }
+    }
+
+
+
+
+
 
     public void GetMap()
     {
@@ -78,6 +149,7 @@ public class MapScene : MonoBehaviour
     //目次ファイルを読み込む。
     private void LoadMapData(string path)
     {
+        string str2;
         string[] strs;
         try
         {
@@ -153,6 +225,11 @@ public class MapScene : MonoBehaviour
 
         //閉じる
         zf.Close();
+
+            str2 = "";
+            for (int i = 0; i < mapData.Count; i++) { if (mapData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str2 = str2 + mapData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+            undoList.Add(str2);
+            undoListNum = undoList.Count - 1;
         }
         catch
         {
@@ -188,6 +265,7 @@ public class MapScene : MonoBehaviour
 
     public void IventDeleteButton()
     {
+        string str2;
         List<int> tmp = new List<int>();
         if (selectNum > 0)
         {
@@ -205,6 +283,12 @@ public class MapScene : MonoBehaviour
                 for (int k = 0; k < multiSelect.Count; k++) { if (multiSelect[j] < multiSelect[k]) { multiSelect[k]--; } }
             }
             selectNum = -1;
+
+            str2 = "";
+            for (int i = 0; i < mapData.Count; i++) { if (mapData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str2 = str2 + mapData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+            undoList.Add(str2);
+            undoListNum = undoList.Count - 1;
+
         }
         else
         {
@@ -328,6 +412,7 @@ public class MapScene : MonoBehaviour
     //インプットフィールドの入力を受け取る関数
     public void InputDecideButton()
     {
+        string str3;
         try
         {
             if (inputField[0].text.Contains("[system]")) { GameObject.Find("Error").GetComponent<Text>().text = "「<color=red>[system]</color>」という文字列は使用禁止です。(システム処理の識別語にしています)"; StartCoroutine(ErrorWait()); return; }
@@ -345,6 +430,11 @@ public class MapScene : MonoBehaviour
                 ScenarioFileCheck(selectNum, zf);
                 zf.Close();
                 latitude = Convert.ToDouble(inputField[1].text); longitude = Convert.ToDouble(inputField[2].text);
+
+                str3 = "";
+                for (int i = 0; i < mapData.Count; i++) { if (mapData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str3 = str3 + mapData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+                undoList.Add(str3);
+                undoListNum = undoList.Count - 1;
             }
             else if (selectNum == 0)
             {
@@ -392,6 +482,11 @@ public class MapScene : MonoBehaviour
                 //（未）を外す
                 latitude = Convert.ToDouble(inputField[12].text); longitude = Convert.ToDouble(inputField[13].text);
                 objIB[selectNum].GetComponentInChildren<Text>().text = "PC版スタート地点　緯:" + latitude.ToString() + ",経:" + longitude.ToString();
+
+                str3 = "";
+                for (int i = 0; i < mapData.Count; i++) { if (mapData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str3 = str3 + mapData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+                undoList.Add(str3);
+                undoListNum = undoList.Count - 1;
             }
             else
             {

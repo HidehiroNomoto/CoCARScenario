@@ -55,7 +55,9 @@ public class ScenariosceneManager : MonoBehaviour
     public List<int> multiSelect = new List<int>();
     public int errorFlag=0;
     private bool NCBFlag = false;
-
+    private List<string> undoList = new List<string>();
+    private int undoListNum=0;
+    private bool URBool;
 
     // Use this for initialization
     void Start()
@@ -79,7 +81,76 @@ public class ScenariosceneManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (Input.GetKey(KeyCode.LeftControl))
+        {
+            if (Input.GetKey(KeyCode.Z))
+            {
+                if (URBool == false) { UndoRedoButton(true); URBool = true; }
+            }
+            else if (Input.GetKey(KeyCode.Y))
+            {
+                if (URBool == false) { UndoRedoButton(false); URBool = true; }
+            }
+            else
+            {
+                URBool = false;
+            }
+        }
+        else
+        {
+            URBool = false;  
+        }
+    }
 
+    public void UndoRedoButton(bool undoFlag)
+    {
+        string str;
+        try
+        {
+            if (undoFlag == true)
+            {
+                str = undoList[undoListNum - 1];
+                undoListNum--;
+            }
+            else
+            {
+                str = undoList[undoListNum + 1];
+                undoListNum++;
+            }
+            commandData.Clear();
+            for (int i = 0; i < objCB.Count; i++) { Destroy(objCB[i]); }
+            objCB.Clear();
+
+            // 読み込んだ目次テキストファイルからstring配列を作成する
+            commandData.AddRange(str.Split('\n'));
+            commandData.RemoveAt(commandData.Count - 1);//最後の行は空白なので消す
+                                    //コマンドをボタンとして一覧に放り込む。
+            for (int i = 0; i < commandData.Count; i++)
+            {
+                if (i < 90)//90以降は全部タイトル戻しで埋めるのでボタン表示しない
+                {
+                    objCB.Add(Instantiate(objCommand) as GameObject);
+                    objCB[i].transform.SetParent(parentObject.transform, false);
+                    objCB[i].transform.Find("Text").GetComponent<Text>().text = commandData[i].Replace("</size>", "");
+                    objCB[i].GetComponent<CommandButton>().buttonNum = i;
+
+                    //分岐コマンドの場合は分岐先表示を出す
+                    if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Select:") { NextSkipMake(10, i); }
+                    else if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Hantei:") { NextSkipMake(11, i); }
+                    else if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Battle:") { NextSkipMake(12, i); }
+                    else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "FlagBranch:") { NextSkipMake(13, i); }
+                    else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "Difference:") { NextSkipMake(17, i); }
+                    else if (commandData[i].Length > 6 && commandData[i].Substring(0, 6) == "Equal:") { NextSkipMake(20, i); }
+                    else { NextSkipMake(0, i); }
+                }
+            }
+        }
+        catch
+        {
+            if (undoFlag == true) { GameObject.Find("Error").GetComponent<Text>().text = "これ以上戻れません。"; }
+            if (undoFlag == false) { GameObject.Find("Error").GetComponent<Text>().text = "これ以上進めません。"; }
+            StartCoroutine(ErrorWait());
+        }
     }
 
     public void NameChangeButton()
@@ -207,6 +278,7 @@ public class ScenariosceneManager : MonoBehaviour
         for (int i = 0; i < commandData.Count; i++) { commandData[i] = commandData[i].Replace(commandName, tmp2).Replace(objBGM.GetComponent<BGMManager>().chapterName, tmp1); }
         for (int i = 0; i < objCB.Count; i++) { objCB[i].transform.Find("Text").GetComponent<Text>().text = commandData[i]; }
         for (int i = 0; i < backFileLog.Count; i++) { backFileLog[i] = backFileLog[i].Replace(commandName, tmp2).Replace(objBGM.GetComponent<BGMManager>().chapterName, tmp1); }
+        for (int i = 0; i < undoList.Count; i++) { undoList[i] = undoList[i].Replace(commandName, tmp2).Replace(objBGM.GetComponent<BGMManager>().chapterName, tmp1); }
         objBGM.GetComponent<BGMManager>().chapterName = tmp1;
         commandName = tmp3;
         GameObject.Find("CNameField").GetComponent<RectTransform>().localPosition = new Vector2(-800, 50);
@@ -423,6 +495,7 @@ public class ScenariosceneManager : MonoBehaviour
 
     public void CommandDecide(int num)
     {
+        string str2;
         string commandText="";
         if (num == 0) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "　"; } if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "　"; } commandText = "Text:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText").GetComponent<InputField>().text; if (GameObject.Find("Toggle").GetComponent<Toggle>().isOn == false) { commandText = commandText + ",false"; } else { commandText = commandText + ",true"; } }
         if (num == 1) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "　"; } commandText = "BackText:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text; if (GameObject.Find("Toggle").GetComponent<Toggle>().isOn == false) { commandText = commandText + ",false"; } else { commandText = commandText + ",true"; } }
@@ -472,6 +545,11 @@ public class ScenariosceneManager : MonoBehaviour
             objCB[selectNum].transform.Find("Text").GetComponent<Text>().text = commandData[selectNum].Replace("</size>", "");
             SceneGraphic();
             NextSkipMake(num, selectNum);
+
+            str2= "";
+            for (int i = 0; i < commandData.Count; i++) { if (commandData[i].Replace("\n", "").Replace("\r", "") == "") { str2 = str2 + "Title:(未設定コマンド。タイトルバックとして機能します)\r\n"; continue; } str2 = str2 + commandData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+            undoList.Add(str2);
+            undoListNum=undoList.Count-1;
         }
         else
         {
@@ -760,8 +838,12 @@ public class ScenariosceneManager : MonoBehaviour
     //コマンドファイルを読み込む。
     private void LoadCommandData(string path)
     {
+        string str;
         commandData.Clear();
+        for (int i = 0; i < objCB.Count; i++) { Destroy(objCB[i]); }
         objCB.Clear();
+        undoList.Clear();
+        undoListNum = 0;
         try
         {
             //閲覧するエントリ
@@ -826,6 +908,11 @@ public class ScenariosceneManager : MonoBehaviour
             catch { }
             //閉じる
             zf.Close();
+
+            str = "";
+            for (int i = 0; i < commandData.Count; i++) { if (commandData[i].Replace("\n", "").Replace("\r", "") == "") { str = str + "Title:(未設定コマンド。タイトルバックとして機能します)\r\n"; continue; } str = str + commandData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+            undoList.Add(str);
+            undoListNum = undoList.Count - 1;
         }
         catch
         {
@@ -835,6 +922,7 @@ public class ScenariosceneManager : MonoBehaviour
 
     public void CommandAddButton()
     {
+        string str;
         //追加ボタンが押されたらコマンドボタンを追加する。
         if (objCB.Count < 90-1)//90コまで
         {
@@ -858,6 +946,11 @@ public class ScenariosceneManager : MonoBehaviour
             }//追加分の後ろはボタン番号が１増える。
 
             selectNum++;
+
+            str = "";
+            for (int i = 0; i < commandData.Count; i++) { if (commandData[i].Replace("\n", "").Replace("\r", "") == "") { str = str + "Title:(未設定コマンド。タイトルバックとして機能します)\r\n"; continue; } str = str + commandData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+            undoList.Add(str);
+            undoListNum = undoList.Count - 1;
         }
         else
         {
@@ -875,6 +968,7 @@ public class ScenariosceneManager : MonoBehaviour
 
     public void CommandDeleteButton()
     {
+        string str;
         if (selectNum >= 0)
         {
             Destroy(objCB[selectNum]);
@@ -914,6 +1008,11 @@ public class ScenariosceneManager : MonoBehaviour
                 for (int k = 0; k < multiSelect.Count; k++) { if (multiSelect[j] < multiSelect[k]) { multiSelect[k]--; } }
             }
             selectNum = -1;
+
+            str = "";
+            for (int i = 0; i < commandData.Count; i++) { if (commandData[i].Replace("\n", "").Replace("\r", "") == "") { str = str + "Title:(未設定コマンド。タイトルバックとして機能します)\r\n"; continue; } str = str + commandData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+            undoList.Add(str);
+            undoListNum = undoList.Count - 1;
         }
         else
         {
