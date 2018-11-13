@@ -230,6 +230,7 @@ public class MapScene : MonoBehaviour
             try
             {
                 InputDecideButton();
+                if (GameObject.Find("Error").GetComponent<Text>().text == "「<color=red>[system]</color>」という文字列は使用禁止です。(システム処理の識別語にしています)") { return; }
                 MakeMapDataFile();
                 strs = mapData[selectNum].Replace("\r", "").Replace("\n", "").Split(',');
                 objBGM.GetComponent<BGMManager>().chapterName = strs[11];
@@ -241,7 +242,7 @@ public class MapScene : MonoBehaviour
         }
         else
         {
-            if (selectNum == 0) { GameObject.Find("Error").GetComponent<Text>().text = "スタート地点設定イベントは消去できません。"; }
+            if (selectNum == 0) { GameObject.Find("Error").GetComponent<Text>().text = "スタート地点設定イベントはこの画面で作成します。"; }
             if (selectNum < 0) { GameObject.Find("Error").GetComponent<Text>().text = "イベントが選択されていません。"; }
             AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();
             StartCoroutine(ErrorWait());
@@ -329,6 +330,7 @@ public class MapScene : MonoBehaviour
     {
         try
         {
+            if (inputField[0].text.Contains("[system]")) { GameObject.Find("Error").GetComponent<Text>().text = "「<color=red>[system]</color>」という文字列は使用禁止です。(システム処理の識別語にしています)"; StartCoroutine(ErrorWait()); return; }
             if (selectNum > 0)
             {
                 if (mapData.Count <= selectNum) { for (int i = mapData.Count; i <= selectNum; i++) { mapData.Add(""); } }//mapDataの要素数をselectNumが越えたら配列の要素数を合わせて増やす。中身は空でOK。（イベント追加されるとmapData.Count以上の番号を持つイベントができるため）

@@ -53,6 +53,8 @@ public class ScenariosceneManager : MonoBehaviour
     public GameObject titleText;
     public int selectBefore = -1;
     public List<int> multiSelect = new List<int>();
+    public int errorFlag=0;
+    private bool NCBFlag = false;
 
 
     // Use this for initialization
@@ -88,77 +90,138 @@ public class ScenariosceneManager : MonoBehaviour
         GameObject.Find("InputZone").GetComponent<RectTransform>().localPosition = new Vector2(0, -500);
     }
 
+    public void NameCancelButton()
+    {
+        GameObject.Find("CNameField").GetComponent<RectTransform>().localPosition = new Vector2(-800, 50);
+        GameObject.Find("InputZone").GetComponent<RectTransform>().localPosition = new Vector2(0, -200);
+    }
+
     public void NameDecideButton()
     {
-        int inum=0;
-        string tmp1,tmp2,tmp3;
+        if (NCBFlag == false)
+        {
+            NCBFlag = true;
+            StartCoroutine(NCBIE());
+        }
+    }
+
+    private IEnumerator NCBIE()
+    {
+        int inum = 0;
+        string tmp1, tmp2, tmp3;
         List<string> tmpList = new List<string>();
         tmp1 = "[system]" + GameObject.Find("INameField").GetComponent<InputField>().text + ".txt";
         tmp2 = "[system]" + GameObject.Find("CNameField").GetComponent<InputField>().text + objBGM.GetComponent<BGMManager>().chapterName;
         tmp3 = "[system]" + GameObject.Find("CNameField").GetComponent<InputField>().text + tmp1;
-        if (commandName.Contains("[system]command1") && commandName!=tmp2)
+        if (commandName.Contains("[system]command1") && commandName != tmp2)
         {
             GameObject.Find("InputZone").GetComponent<RectTransform>().localPosition = new Vector2(0, -200);
             GameObject.Find("CNameField").GetComponent<RectTransform>().localPosition = new Vector2(-800, 50);
-            GameObject.Find("Error").GetComponent<Text>().text = "イベント開始時のコマンドファイル名は変更不可です。"; StartCoroutine(ErrorWait());
-            return;
+            GameObject.Find("Error").GetComponent<Text>().text = "イベント開始時のコマンドファイル名は変更不可です。";
+            NCBFlag = false;
+            StartCoroutine(ErrorWait());
+            yield break;
         }
+        if (GameObject.Find("INameField").GetComponent<InputField>().text.Contains("[system]") || GameObject.Find("CNameField").GetComponent<InputField>().text.Contains("[system]"))
+        {
+            GameObject.Find("InputZone").GetComponent<RectTransform>().localPosition = new Vector2(0, -200);
+            GameObject.Find("CNameField").GetComponent<RectTransform>().localPosition = new Vector2(-800, 50);
+            GameObject.Find("Error").GetComponent<Text>().text = "「<color=red>[system]</color>」という文字列は使用禁止です。(システム処理の識別語にしています)";
+            NCBFlag = false;
+            StartCoroutine(ErrorWait());
+            yield break;
+        }
+
         //全てのコマンドファイル、イベントファイル、マップデータを開き、コマンド名（[system]～～××.txt）をtmp1に、イベント名（××.txt）をtmp2に変換する。
 
-            //ZipFileオブジェクトの作成
-            ICSharpCode.SharpZipLib.Zip.ZipFile zf =
-                new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
-            zf.Password = Secret.SecretString.zipPass;
-
-            //ZipFileの更新を開始
-            zf.BeginUpdate();
-                //展開するエントリを探す
-                foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry ze in zf)
+        //ZipFileオブジェクトの作成
+        ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+            new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
+        zf.Password = Secret.SecretString.zipPass;
+        foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry ze in zf)
+        {
+            if ((ze.Name != objBGM.GetComponent<BGMManager>().chapterName && ze.Name == tmp1) || (ze.Name != commandName && ze.Name == tmp3))
             {
-                if (ze.Name.Substring(ze.Name.Length - 4) == ".txt" && !tmpList.Contains(ze.Name))
+                GameObject.Find("Error").GetComponent<Text>().text = "他のファイルと名前が重複しています。上書きしますか？";
+                GameObject.Find("ErrorButton").GetComponent<RectTransform>().localPosition = new Vector2(0, -70);
+                errorFlag = 0;
+                while (errorFlag==0) { yield return null; }
+                if (errorFlag == 1) { GameObject.Find("Error").GetComponent<Text>().text = ""; GameObject.Find("ErrorButton").GetComponent<RectTransform>().localPosition = new Vector2(0, -470); break; }//OKならそのまま処理
+                if (errorFlag == -1)
                 {
+                    //閉じる
+                    zf.Close();
+                    GameObject.Find("InputZone").GetComponent<RectTransform>().localPosition = new Vector2(0, -200);
+                    GameObject.Find("CNameField").GetComponent<RectTransform>().localPosition = new Vector2(-800, 50);
+                    GameObject.Find("Error").GetComponent<Text>().text = "";
+                    GameObject.Find("ErrorButton").GetComponent<RectTransform>().localPosition = new Vector2(0, -470);
+                    NCBFlag = false;
+                    yield break;
+                }//NGならキャンセル処理
+            }
+        }
+        //ZipFileの更新を開始
+        zf.BeginUpdate();
+        //展開するエントリを探す
+        foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry ze in zf)
+        {
+            if (ze.Name.Substring(ze.Name.Length - 4) == ".txt" && !tmpList.Contains(ze.Name))
+            {
                 //閲覧するZIPエントリのStreamを取得
                 Stream reader = zf.GetInputStream(ze);
-                    //文字コードを指定してStreamReaderを作成
-                    StreamReader sr = new StreamReader(
-                        reader, System.Text.Encoding.GetEncoding("UTF-8"));
-                    // テキストを取り出す
-                    string text = sr.ReadToEnd();
-                    sr.Close();
-                    reader.Close();
+                //文字コードを指定してStreamReaderを作成
+                StreamReader sr = new StreamReader(
+                    reader, System.Text.Encoding.GetEncoding("UTF-8"));
+                // テキストを取り出す
+                string text = sr.ReadToEnd();
+                sr.Close();
+                reader.Close();
                 string text2 = text;
                 // 読み込んだ目次テキストファイルからstring配列を作成する
                 text = text.Replace(commandName, tmp2);
                 text = text.Replace(objBGM.GetComponent<BGMManager>().chapterName, tmp1);
                 if (text2 == text) { continue; }
                 StreamWriter sw = new StreamWriter(@GetComponent<Utility>().GetAppPath() + @"\" + "tmp" + inum.ToString() + ".txt", false, System.Text.Encoding.GetEncoding("UTF-8"));
-                    //TextBox1.Textの内容を書き込む
-                    sw.Write(text);
-                    //閉じる
-                    sw.Close();
+                //TextBox1.Textの内容を書き込む
+                sw.Write(text);
+                //閉じる
+                sw.Close();
 
-                    //ファイル名自体も置換
-                    string tmpName;
-                    tmpName = ze.Name;
-                    tmpName = tmpName.Replace(commandName, tmp2);
-                    tmpName = tmpName.Replace(objBGM.GetComponent<BGMManager>().chapterName, tmp1);
-                    zf.Delete(ze.Name);
-                    zf.Add("tmp" + inum.ToString() + ".txt", tmpName);
-                    inum++;
-                    tmpList.Add(tmpName);           
-                }
+                //ファイル名自体も置換
+                string tmpName;
+                tmpName = ze.Name;
+                tmpName = tmpName.Replace(commandName, tmp2);
+                tmpName = tmpName.Replace(objBGM.GetComponent<BGMManager>().chapterName, tmp1);
+                zf.Delete(ze.Name);
+                zf.Add("tmp" + inum.ToString() + ".txt", tmpName);
+                inum++;
+                tmpList.Add(tmpName);
             }
-            //ZipFileの更新をコミット
-            zf.CommitUpdate();
+        }
+        //ZipFileの更新をコミット
+        zf.CommitUpdate();
 
-            //閉じる
-            zf.Close();
+        //閉じる
+        zf.Close();
         for (int i = 0; i < inum; i++) { File.Delete(@GetComponent<Utility>().GetAppPath() + @"\" + "tmp" + i.ToString() + ".txt"); }
+        for (int i = 0; i < commandData.Count; i++) { commandData[i] = commandData[i].Replace(commandName, tmp2).Replace(objBGM.GetComponent<BGMManager>().chapterName, tmp1); }
+        for (int i = 0; i < objCB.Count; i++) { objCB[i].transform.Find("Text").GetComponent<Text>().text = commandData[i]; }
+        for (int i = 0; i < backFileLog.Count; i++) { backFileLog[i] = backFileLog[i].Replace(commandName, tmp2).Replace(objBGM.GetComponent<BGMManager>().chapterName, tmp1); }
         objBGM.GetComponent<BGMManager>().chapterName = tmp1;
         commandName = tmp3;
         GameObject.Find("CNameField").GetComponent<RectTransform>().localPosition = new Vector2(-800, 50);
         titleText.GetComponent<Text>().text = tmp3.Replace(tmp1, "").Replace("[system]", "[コマンド]") + "\n" + tmp1.Replace("[system]", "[イベント]");
         GameObject.Find("InputZone").GetComponent<RectTransform>().localPosition = new Vector2(0, -200);
+        NCBFlag = false;
+    }
+
+    public void ErrorOKButton()
+    {
+        errorFlag = 1;
+    }
+    public void ErrorNGButton()
+    {
+        errorFlag = -1;
     }
 
     private void SceneGraphic()
@@ -363,34 +426,39 @@ public class ScenariosceneManager : MonoBehaviour
         string commandText="";
         if (num == 0) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "　"; } if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "　"; } commandText = "Text:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText").GetComponent<InputField>().text; if (GameObject.Find("Toggle").GetComponent<Toggle>().isOn == false) { commandText = commandText + ",false"; } else { commandText = commandText + ",true"; } }
         if (num == 1) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "　"; } commandText = "BackText:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text; if (GameObject.Find("Toggle").GetComponent<Toggle>().isOn == false) { commandText = commandText + ",false"; } else { commandText = commandText + ",true"; } }
-        if (num == 2) { if (selectGS == -1) { return; } commandText = "Back:" + selectGS.ToString(); }
-        if (num == 3) { if (selectGS == -1) { return; } if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "0"; } commandText = "BGM:" + selectGS.ToString() + "," + GameObject.Find("InputFieldName").GetComponent<InputField>().text;}
+        if (num == 2) { if (selectGS == -1) { GameObject.Find("Error").GetComponent<Text>().text = "画像を選択してください。"; StartCoroutine(ErrorWait()); return; } commandText = "Back:" + selectGS.ToString(); }
+        if (num == 3) { if (selectGS == -1) { GameObject.Find("Error").GetComponent<Text>().text = "ファイルを選択してください。"; StartCoroutine(ErrorWait()); return; } if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "0"; } commandText = "BGM:" + selectGS.ToString() + "," + GameObject.Find("InputFieldName").GetComponent<InputField>().text;}
         if (num == 4) { if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "0"; } commandText = "BGMStop:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text; }
-        if (num == 5) { if (selectGS == -1) { return; } commandText = "SE:" + selectGS.ToString(); }
+        if (num == 5) { if (selectGS == -1) { GameObject.Find("Error").GetComponent<Text>().text = "ファイルを選択してください。"; StartCoroutine(ErrorWait()); return; } commandText = "SE:" + selectGS.ToString(); }
         if (num == 6) { string str=""; if(GameObject.Find("Slider2").GetComponent<Slider>().value==1){ str = "L"; } if (GameObject.Find("Slider2").GetComponent<Slider>().value == 2) { str = "N"; } if (GameObject.Find("Slider2").GetComponent<Slider>().value == 3) { str = "R"; } commandText = "Chara:" + selectGS.ToString() + "," + ((int)(GameObject.Find("Slider").GetComponent<Slider>().value)).ToString() + "," + str; }
-        if (num == 7) { if (selectGS == -1) { return; } commandText = "Item:" + selectGS.ToString(); }
+        if (num == 7) { if (selectGS == -1) { GameObject.Find("Error").GetComponent<Text>().text = "画像を選択してください。"; StartCoroutine(ErrorWait()); return; } commandText = "Item:" + selectGS.ToString(); }
         if (num == 8) { commandText = "Shake:"; }
         if (num == 9) { commandText = "Jump:" + ((int)(GameObject.Find("Slider").GetComponent<Slider>().value)).ToString(); }
         if (num == 10) { commandText = "Select:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
-        if (num == 11) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text=="") { return; }if (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = "0"; } commandText="Hantei:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
+        if (num == 11) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text=="") { GameObject.Find("Error").GetComponent<Text>().text = "必要項目が入力されていません。"; StartCoroutine(ErrorWait()); return; } if (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = "0"; } commandText="Hantei:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
         if (num == 12) { for (int i = 2; i < 5; i++) { if (GameObject.Find("InputFieldText (" + i.ToString() + ")").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (" + i.ToString() + ")").GetComponent<InputField>().text = "0"; } }
              if (GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text = "逃走"; }
             if (GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text == "") { if (GameObject.Find("InputFieldText (6)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text = "-99"; } else { GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text = "0"; } }
             if (GameObject.Find("InputFieldText (6)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (6)").GetComponent<InputField>().text = "回避"; }
             if (GameObject.Find("InputFieldText (8)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (8)").GetComponent<InputField>().text = "-1"; }
-            if (selectGS == -1) { return; } commandText = "Battle:" + selectGS.ToString() + "," + GameObject.Find("Label1").GetComponent<Text>().text + "," + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text + "," + GameObject.Find("Label2").GetComponent<Text>().text + "," + GameObject.Find("Label3").GetComponent<Text>().text.Replace("D","") + "," + (GameObject.Find("Toggle1").GetComponent<Toggle>().isOn).ToString().ToLower() + "," + GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (6)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (8)").GetComponent<InputField>().text + "," + (GameObject.Find("Toggle2").GetComponent<Toggle>().isOn).ToString().ToLower(); }
-        if (num == 13) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { return; } if (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text ="1" ; } commandText ="FlagBranch:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
-        if (num == 14) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "" || (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "" && GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text == "")) { return; } if (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text != "") { GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text = ""; } commandText = "FlagChange:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text; }
+            if (selectGS == -1) { GameObject.Find("Error").GetComponent<Text>().text = "画像を選択してください。"; StartCoroutine(ErrorWait()); return; } commandText = "Battle:" + selectGS.ToString() + "," + GameObject.Find("Label1").GetComponent<Text>().text + "," + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text + "," + GameObject.Find("Label2").GetComponent<Text>().text + "," + GameObject.Find("Label3").GetComponent<Text>().text.Replace("D","") + "," + (GameObject.Find("Toggle1").GetComponent<Toggle>().isOn).ToString().ToLower() + "," + GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (6)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (8)").GetComponent<InputField>().text + "," + (GameObject.Find("Toggle2").GetComponent<Toggle>().isOn).ToString().ToLower(); }
+        if (num == 13) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { GameObject.Find("Error").GetComponent<Text>().text = "必要項目が入力されていません。"; StartCoroutine(ErrorWait()); return; } if (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text ="1" ; } commandText ="FlagBranch:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
+        if (num == 14)
+        {
+            if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "" || (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "" && GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text == "")) { GameObject.Find("Error").GetComponent<Text>().text = "必要項目が入力されていません。"; StartCoroutine(ErrorWait()); return; }
+            if (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text != "") { GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text = ""; }
+            if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text.Contains("[system]")) { GameObject.Find("Error").GetComponent<Text>().text = "「<color=red>[system]</color>」という文字列は使用禁止です。(システム処理の識別語にしています)"; StartCoroutine(ErrorWait()); return; } else { commandText = "FlagChange:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text; }
+        }
         if (num == 15) { commandText = "GetTime:"; }
-        if (num == 16) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "" || GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { return; } commandText = "FlagCopy:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
+        if (num == 16) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "" || GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("Error").GetComponent<Text>().text = "必要項目が入力されていません。"; StartCoroutine(ErrorWait()); return; } commandText = "FlagCopy:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
         if (num == 17) { commandText = "Difference:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text; }
         if (num == 18) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { commandText = "StatusChange:" + GameObject.Find("Label1").GetComponent<Text>().text +"," + GameObject.Find("Label2").GetComponent<Text>().text + GameObject.Find("Label3").GetComponent<Text>().text; } else { commandText = "StatusChange:" + GameObject.Find("Label1").GetComponent<Text>().text + "," + GameObject.Find("InputFieldText").GetComponent<InputField>().text; }  }
-        if (num == 19) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { return; } commandText = "Input:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text; }
-        if (num == 20) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "" || GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { return; } commandText = "Equal:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
+        if (num == 19) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { GameObject.Find("Error").GetComponent<Text>().text = "必要項目が入力されていません。"; StartCoroutine(ErrorWait()); return; } commandText = "Input:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text; }
+        if (num == 20) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "" || GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("Error").GetComponent<Text>().text = "必要項目が入力されていません。"; StartCoroutine(ErrorWait()); return; } commandText = "Equal:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
         if (num == 21) { commandText = "Lost:"; }
         if (num == 22) { commandText = "Title:"; }
         if (num == 23) { if (GameObject.Find("Toggle").GetComponent<Toggle>().isOn == false) { commandText = "Map:Once"; } else { commandText = "Map:Anytime"; } }
-        if (num == 24) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") {commandFileNum++;SaveCommandFileNum(); commandText = "NextFile:" + "[system]NoName" + commandFileNum.ToString() + objBGM.GetComponent<BGMManager>().chapterName; } else { commandText = "NextFile:" + "[system]" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + objBGM.GetComponent<BGMManager>().chapterName; } }
+        if (num == 24) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") {commandFileNum++;SaveCommandFileNum(); commandText = "NextFile:" + "[system]NoName" + commandFileNum.ToString() + objBGM.GetComponent<BGMManager>().chapterName; } else { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text.Contains("[system]")) {GameObject.Find("Error").GetComponent<Text>().text = "「<color=red>[system]</color>」という文字列は使用禁止です。(システム処理の識別語にしています)";StartCoroutine(ErrorWait());return; } else { commandText = "NextFile:" + "[system]" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + objBGM.GetComponent<BGMManager>().chapterName; } } }
         if (num == 25) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "" ){ GameObject.Find("InputFieldText").GetComponent<InputField>().text = "0"; }
             if (GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = "0"; }
             if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = "0"; }
@@ -932,6 +1000,7 @@ public class ScenariosceneManager : MonoBehaviour
         int[] temp1= { backGraphLogTemp[0], backGraphLogTemp[1], backGraphLogTemp[2], backGraphLogTemp[3], backGraphLogTemp[4], backGraphLogTemp[5], };
         string[] temp2= { backTLogTemp[0],backTLogTemp[1] };//配列や文字列をそのまま代入すると参照型なのでアドレス自体を渡してしまう（＝元データをいじるとリストまで変更されてしまう）
         CommandDecide(24);//ネクストファイルの「決定」ボタンを押したのと同じ効果。
+        if (GameObject.Find("Error").GetComponent<Text>().text == "「<color=red>[system]</color>」という文字列は使用禁止です。(システム処理の識別語にしています)") { return; }
         path = commandData[selectNum].Substring(9).Replace("\r","").Replace("\n","");
         SaveCommandFile();
         backFileLog.Add(commandName);//現在のコマンドファイル名をログに保存
