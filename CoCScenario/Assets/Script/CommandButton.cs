@@ -55,7 +55,7 @@ public class CommandButton : MonoBehaviour {
                     s1.selectBefore = s1.selectNum;
                     foreach (GameObject tmpObj in s1.objCB) { if (tmpObj != s1.objCB[s1.selectNum]) { tmpObj.GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f); } }
                     s1.multiSelect.Clear();
-                }//スタート座標を複数選択に含まれると困るので、0は抜く。
+                }
             }
         }
         else

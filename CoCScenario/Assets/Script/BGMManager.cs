@@ -9,6 +9,8 @@ public class BGMManager : MonoBehaviour {
     public string saveKey = "進行中シナリオ";
     //マルチプレイのフラグ
     public int multiPlay = 0;
+    public string copyString = "";
+    public string copyMapString = "";
 
     public struct bgmFlag
     {

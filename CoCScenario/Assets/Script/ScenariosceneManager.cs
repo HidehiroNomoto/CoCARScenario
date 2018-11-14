@@ -58,6 +58,7 @@ public class ScenariosceneManager : MonoBehaviour
     private List<string> undoList = new List<string>();
     private int undoListNum=0;
     private bool URBool;
+    private bool copyBool;
 
     // Use this for initialization
     void Start()
@@ -81,7 +82,7 @@ public class ScenariosceneManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKey(KeyCode.LeftControl))
+        if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
         {
             if (Input.GetKey(KeyCode.Z))
             {
@@ -100,6 +101,95 @@ public class ScenariosceneManager : MonoBehaviour
         {
             URBool = false;  
         }
+        if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+        {
+            if (Input.GetKey(KeyCode.C))
+            {
+                if (copyBool == false) { CopyButton(); copyBool = true; }
+            }
+            else if (Input.GetKey(KeyCode.V))
+            {
+                if (copyBool == false) { PasteButton(); copyBool = true; }
+            }
+            else
+            {
+                copyBool = false;
+            }
+        }
+        else
+        {
+            copyBool = false;
+        }
+    }
+
+    public void CopyButton()
+    {
+        string str="";
+        if (multiSelect.Count == 0)
+        {
+            str = commandData[selectNum].Replace("\r","").Replace("\n","") + "\r\n";
+        }
+        else if (multiSelect[0] > selectNum)
+        {
+            str = str + commandData[selectNum].Replace("\r", "").Replace("\n", "") + "\r\n";
+            for (int i = multiSelect.Count-1; i>=0; i--) { str = str + commandData[multiSelect[i]].Replace("\r", "").Replace("\n", "") + "\r\n"; }
+        }
+        else if (multiSelect[0] < selectNum)
+        {
+            for (int i = 0; i <multiSelect.Count; i++) { str = str + commandData[multiSelect[i]].Replace("\r", "").Replace("\n", "") + "\r\n"; }
+            str = str + commandData[selectNum].Replace("\r", "").Replace("\n", "") + "\r\n";
+        }
+        //strの最後の\r\nはいらない
+        str = str.Substring(0, str.Length - 2);
+        objBGM.GetComponent<BGMManager>().copyString=str;
+    }
+
+    public void PasteButton()
+    {
+        string str="";
+        if (objBGM.GetComponent<BGMManager>().copyString == "") { return; }
+        List<string> strList = new List<string>();
+        strList.AddRange(undoList[undoListNum].Replace("\r", "").Split('\n'));
+        strList.InsertRange(selectNum+1, objBGM.GetComponent<BGMManager>().copyString.Replace("\r", "").Split('\n'));
+
+        if (strList.Count > 90) //undoList(strList)の段階では最後に空白行があるので90はセーフ。
+        {
+            GameObject.Find("Error").GetComponent<Text>().text = "貼りつけ後のコマンド数が90以上になるので貼りつけられません。";
+            StartCoroutine(ErrorWait());
+            return;
+        }
+
+        commandData.Clear();
+        for (int i = 0; i < objCB.Count; i++) { Destroy(objCB[i]); }
+        objCB.Clear();
+        // 読み込んだ目次テキストファイルからstring配列を作成する
+        commandData.AddRange(strList);
+        commandData.RemoveAt(commandData.Count - 1);//最後の行は空白なので消す
+                                                    //コマンドをボタンとして一覧に放り込む。
+        for (int i = 0; i < commandData.Count; i++)
+        {
+            if (i < 90)//90以降は全部タイトル戻しで埋めるのでボタン表示しない
+            {
+                objCB.Add(Instantiate(objCommand) as GameObject);
+                objCB[i].transform.SetParent(parentObject.transform, false);
+                objCB[i].transform.Find("Text").GetComponent<Text>().text = commandData[i].Replace("</size>", "");
+                objCB[i].GetComponent<CommandButton>().buttonNum = i;
+
+                //分岐コマンドの場合は分岐先表示を出す
+                if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Select:") { NextSkipMake(10, i); }
+                else if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Hantei:") { NextSkipMake(11, i); }
+                else if (commandData[i].Length > 7 && commandData[i].Substring(0, 7) == "Battle:") { NextSkipMake(12, i); }
+                else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "FlagBranch:") { NextSkipMake(13, i); }
+                else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "Difference:") { NextSkipMake(17, i); }
+                else if (commandData[i].Length > 6 && commandData[i].Substring(0, 6) == "Equal:") { NextSkipMake(20, i); }
+                else { NextSkipMake(0, i); }
+            }
+        }
+        for (int i = 0; i < commandData.Count; i++) { str = str + commandData[i].Replace("\r","").Replace("\n","") + "\r\n"; }
+        undoList.Add(str);
+        undoListNum = undoList.Count - 1;
+        selectNum = -1;
+        multiSelect.Clear();
     }
 
     public void UndoRedoButton(bool undoFlag)
@@ -144,6 +234,8 @@ public class ScenariosceneManager : MonoBehaviour
                     else { NextSkipMake(0, i); }
                 }
             }
+            selectNum = -1;
+            multiSelect.Clear();
         }
         catch
         {

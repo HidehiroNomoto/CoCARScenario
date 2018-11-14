@@ -34,6 +34,8 @@ public class MapScene : MonoBehaviour
     public bool URBool=false;
     private List<string> undoList = new List<string>();
     private int undoListNum = 0;
+    private bool copyBool = false;
+
 
     void Start()
     {
@@ -49,7 +51,7 @@ public class MapScene : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKey(KeyCode.LeftControl))
+        if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
         {
             if (Input.GetKey(KeyCode.Z))
             {
@@ -67,6 +69,25 @@ public class MapScene : MonoBehaviour
         else
         {
             URBool = false;
+        }
+        if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+        {
+            if (Input.GetKey(KeyCode.C))
+            {
+                if (copyBool == false) { CopyButton(); copyBool = true; }
+            }
+            else if (Input.GetKey(KeyCode.V))
+            {
+                if (copyBool == false) { PasteButton(); copyBool = true; }
+            }
+            else
+            {
+                copyBool = false;
+            }
+        }
+        else
+        {
+            copyBool = false;
         }
     }
 
@@ -92,19 +113,21 @@ public class MapScene : MonoBehaviour
             // 読み込んだ目次テキストファイルからstring配列を作成する
             mapData.AddRange(str.Split('\n'));
             mapData.RemoveAt(mapData.Count - 1);//最後の行は空白なので消す
+                                                //ZipFileオブジェクトの作成
+            ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+                new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
+            zf.Password = Secret.SecretString.zipPass;
             for (int i = 0; i < mapData.Count; i++)
             {
                 objIB.Add(Instantiate(objIvent) as GameObject);
                 objIB[i].transform.SetParent(parentObject.transform, false);
                 objIB[i].GetComponentInChildren<Text>().text = MapDataToButton(mapData[i]);
                 objIB[i].GetComponent<IventButton>().buttonNum = i;
-                //ZipFileオブジェクトの作成
-                ICSharpCode.SharpZipLib.Zip.ZipFile zf =
-                    new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
-                zf.Password = Secret.SecretString.zipPass;
+
                 ScenarioFileCheck(i, zf);
-                zf.Close();
+
             }
+            zf.Close();
         }
         catch
         {
@@ -114,7 +137,86 @@ public class MapScene : MonoBehaviour
         }
     }
 
+    public void CopyButton()
+    {
+        string str = "";
+        if (selectNum == 0)
+        {
+            GameObject.Find("Error").GetComponent<Text>().text = "スタート地点設定イベントはコピーできません。";
+            StartCoroutine(ErrorWait());
+            return;
+        }
+        foreach (int i in multiSelect)
+        {
+            if (i == 0)
+            {
+                GameObject.Find("Error").GetComponent<Text>().text = "スタート地点設定イベントはコピーできません。";
+                StartCoroutine(ErrorWait());
+                return;
+            }
+        }
+        if (multiSelect.Count == 0)
+        {
+            str = mapData[selectNum].Replace("\r", "").Replace("\n", "") + "\r\n";
+        }
+        else if (multiSelect[0] > selectNum)
+        {
+            str = str + mapData[selectNum].Replace("\r", "").Replace("\n", "") + "\r\n";
+            for (int i = multiSelect.Count - 1; i >= 0; i--) { str = str + mapData[multiSelect[i]].Replace("\r", "").Replace("\n", "") + "\r\n"; }
+        }
+        else if (multiSelect[0] < selectNum)
+        {
+            for (int i = 0; i < multiSelect.Count; i++) { str = str + mapData[multiSelect[i]].Replace("\r", "").Replace("\n", "") + "\r\n"; }
+            str = str + mapData[selectNum].Replace("\r", "").Replace("\n", "") + "\r\n";
+        }
+        //strの最後の\r\nはいらない
+        str = str.Substring(0, str.Length - 2);
+        objBGM.GetComponent<BGMManager>().copyMapString = str;
+    }
 
+    public void PasteButton()
+    {
+        string str = "";
+        if (objBGM.GetComponent<BGMManager>().copyMapString == "") { return; }
+        List<string> strList = new List<string>();
+        strList.AddRange(undoList[undoListNum].Replace("\r", "").Split('\n'));
+        strList.InsertRange(selectNum + 1, objBGM.GetComponent<BGMManager>().copyMapString.Replace("\r", "").Split('\n'));
+
+        if (strList.Count > 90) //undoList(strList)の段階では最後に空白行があるので90はセーフ。
+        {
+            GameObject.Find("Error").GetComponent<Text>().text = "貼りつけ後のコマンド数が90以上になるので貼りつけられません。";
+            StartCoroutine(ErrorWait());
+            return;
+        }
+
+        mapData.Clear();
+        for (int i = 0; i < objIB.Count; i++) { Destroy(objIB[i]); }
+        objIB.Clear();
+        // 読み込んだ目次テキストファイルからstring配列を作成する
+        mapData.AddRange(strList);
+        mapData.RemoveAt(mapData.Count - 1);//最後の行は空白なので消す
+                                            //コマンドをボタンとして一覧に放り込む。
+                                            //ZipFileオブジェクトの作成
+        ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+            new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
+        zf.Password = Secret.SecretString.zipPass;
+        for (int i = 0; i < mapData.Count; i++)
+        {
+            objIB.Add(Instantiate(objIvent) as GameObject);
+            objIB[i].transform.SetParent(parentObject.transform, false);
+            objIB[i].GetComponentInChildren<Text>().text = MapDataToButton(mapData[i]);
+            objIB[i].GetComponent<IventButton>().buttonNum = i;
+
+            ScenarioFileCheck(i, zf);
+
+        }
+        zf.Close();
+        for (int i = 0; i < mapData.Count; i++) { str = str + mapData[i].Replace("\r", "").Replace("\n", "") + "\r\n"; }
+        undoList.Add(str);
+        undoListNum = undoList.Count - 1;
+        selectNum = -1;
+        multiSelect.Clear();
+    }
 
 
 
