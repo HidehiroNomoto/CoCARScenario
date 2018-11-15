@@ -35,6 +35,7 @@ public class MapScene : MonoBehaviour
     private List<string> undoList = new List<string>();
     private int undoListNum = 0;
     private bool copyBool = false;
+    public List<string> tmpList = new List<string>();//test
 
 
     void Start()
@@ -631,6 +632,8 @@ public class MapScene : MonoBehaviour
     //[system]mapdata.txtファイルを書き出す関数
     public void MakeMapDataFile()
     {
+        //List<string> tmpList = new List<string>();
+        List<string> notUseList = new List<string>();
         try
         {
             string str = "";
@@ -648,6 +651,23 @@ public class MapScene : MonoBehaviour
             ICSharpCode.SharpZipLib.Zip.ZipFile zf =
                 new ICSharpCode.SharpZipLib.Zip.ZipFile(zipPath);
             zf.Password = Secret.SecretString.zipPass;
+
+            //全てのテキストファイルを開き、エントリ名が一度でも書かれていれば、そのエントリ名を記録。
+            //foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry ze in zf)
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze= zf.GetEntry("[system]mapdata[system].txt");
+
+            FileSearchLoop(ze, zf, tmpList);
+
+            tmpList.Add("[system]mapdata[system].txt"); tmpList.Add("[system]password[system].txt"); tmpList.Add("[system]commandFileNum[system].txt");
+            tmpList.Add("[system]command1[system]PC版スタート地点[system].txt"); tmpList.Add("[system]PC版スタート地点[system].txt");
+
+            foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry ze3 in zf)
+            {
+                bool useFlag = false;
+                foreach (string tmpStr in tmpList) { if (tmpStr == ze3.Name) { useFlag = true; } }
+                if (useFlag == false) { string tmpStr = ze3.Name; notUseList.Add(tmpStr); }
+            }
+
             //ZipFileの更新を開始
             zf.BeginUpdate();
 
@@ -655,6 +675,7 @@ public class MapScene : MonoBehaviour
             string f = System.IO.Path.GetFileName(file);
             //ZIP書庫に一時的に書きだしておいたファイルを追加する
             zf.Add(file, f);
+            foreach (string tmpStr in notUseList) { zf.Delete(tmpStr); }//notUseListのファイルを消す。
 
             //ZipFileの更新をコミット
             zf.CommitUpdate();
@@ -667,6 +688,40 @@ public class MapScene : MonoBehaviour
         }
         catch { }
     }
+
+    private void FileSearchLoop(ICSharpCode.SharpZipLib.Zip.ZipEntry ze, ICSharpCode.SharpZipLib.Zip.ZipFile zf,List<string> tmpList)
+    {
+        bool next;
+        if (ze.Name.Substring(ze.Name.Length - 4) == ".txt")
+        {
+            //閲覧するZIPエントリのStreamを取得
+            System.IO.Stream reader = zf.GetInputStream(ze);
+            //文字コードを指定してStreamReaderを作成
+            System.IO.StreamReader sr = new System.IO.StreamReader(
+                reader, System.Text.Encoding.GetEncoding("UTF-8"));
+            // テキストを取り出す
+            string text = sr.ReadToEnd();
+            foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry ze2 in zf)
+            {
+                if (text.Contains(ze2.Name))
+                {
+                    string tmpStr = ze2.Name;
+                    next = true;
+                    foreach (string str in tmpList)
+                    {
+                        if (str == ze2.Name) { next=false; }
+                    }
+                    tmpList.Add(tmpStr);
+                    if (next == true) { FileSearchLoop(ze2, zf, tmpList); }
+                }
+            }//再帰でmapdataから繋がるツリーを総探査する。
+        }
+    }
+
+
+
+
+
 
     public void ScenarioFileCheck(int num, ICSharpCode.SharpZipLib.Zip.ZipFile zf)
     {
