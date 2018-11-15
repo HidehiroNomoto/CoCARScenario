@@ -59,6 +59,7 @@ public class ScenariosceneManager : MonoBehaviour
     private int undoListNum=0;
     private bool URBool;
     private bool copyBool;
+    private int time=0;
 
     // Use this for initialization
     void Start()
@@ -82,6 +83,8 @@ public class ScenariosceneManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (time % 36000 == 0) { File.Copy(PlayerPrefs.GetString("進行中シナリオ", ""), "BackUp.zip", true); }
+        time++;
         if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
         {
             if (Input.GetKey(KeyCode.Z))

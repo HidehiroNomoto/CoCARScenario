@@ -36,7 +36,7 @@ public class MapScene : MonoBehaviour
     private int undoListNum = 0;
     private bool copyBool = false;
     public List<string> tmpList = new List<string>();//test
-
+    private int time = 0;
 
     void Start()
     {
@@ -52,6 +52,8 @@ public class MapScene : MonoBehaviour
 
     void Update()
     {
+        if (time % 36000 == 0) { System.IO.File.Copy(PlayerPrefs.GetString("進行中シナリオ", ""), "BackUp.zip", true); }
+        time++;
         if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
         {
             if (Input.GetKey(KeyCode.Z))
