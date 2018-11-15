@@ -11,6 +11,10 @@ public class BGMManager : MonoBehaviour {
     public int multiPlay = 0;
     public string copyString = "";
     public string copyMapString = "";
+    public string[] gFileName = new string[99];
+    public string[] sFileName = new string[40];
+    public Sprite[] scenarioGraphic = new Sprite[100];       //シナリオ画像保存変数
+    public AudioClip[] scenarioAudio = new AudioClip[40];    //シナリオＢＧＭ・ＳＥ保存変数
 
     public struct bgmFlag
     {

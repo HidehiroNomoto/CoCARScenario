@@ -125,6 +125,8 @@ public class ScenariosceneManager : MonoBehaviour
     public void CopyButton()
     {
         string str="";
+        bool[] gF = new bool[scenarioGraphic.Length - 1];
+        bool[] sF = new bool[scenarioAudio.Length];
         if (multiSelect.Count == 0)
         {
             str = commandData[selectNum].Replace("\r","").Replace("\n","") + "\r\n";
@@ -141,16 +143,108 @@ public class ScenariosceneManager : MonoBehaviour
         }
         //strの最後の\r\nはいらない
         str = str.Substring(0, str.Length - 2);
+        str = str.Replace(objBGM.GetComponent<BGMManager>().chapterName,"[system]元ファイル名");
+
+        //コピーされたコマンドが参照する画像サウンドファイルの番号を取得
+        str = "\n" + str;
+        for (int i = 0; i < scenarioGraphic.Length - 1; i++)
+        {
+            if (str.Contains("\nBack:" + i.ToString()) || str.Contains("\nChara:" + i.ToString()) || str.Contains("\nItem:" + i.ToString()) || str.Contains("\nBattle:" + i.ToString())) { gF[i] = true; }
+        }
+        for (int i = 0; i < scenarioAudio.Length; i++)
+        {
+            if (str.Contains("\nBGM:" + i.ToString()) || str.Contains("\nSE:" + i.ToString())) { sF[i] = true; }
+        }
+        str = str.Substring(1);
+
+        //コピーされたコマンドが参照する画像サウンドファイルの名前を取得。画像サウンドファイル自体も一時保存。
+        for (int i = 0; i < gF.Length; i++) { if (gF[i] == true) { objBGM.GetComponent<BGMManager>().gFileName[i] = gFileName[i]; objBGM.GetComponent<BGMManager>().scenarioGraphic[i]=scenarioGraphic[i]; } }
+        for (int i = 0; i < sF.Length; i++) { if (sF[i] == true) { objBGM.GetComponent<BGMManager>().sFileName[i] = sFileName[i]; objBGM.GetComponent<BGMManager>().scenarioAudio[i] = scenarioAudio[i]; } }
+
         objBGM.GetComponent<BGMManager>().copyString=str;
     }
 
     public void PasteButton()
     {
         string str="";
+        bool[] gF = new bool[scenarioGraphic.Length - 1];
+        bool[] sF = new bool[scenarioAudio.Length];
         if (objBGM.GetComponent<BGMManager>().copyString == "") { return; }
         List<string> strList = new List<string>();
         strList.AddRange(undoList[undoListNum].Replace("\r", "").Split('\n'));
-        strList.InsertRange(selectNum+1, objBGM.GetComponent<BGMManager>().copyString.Replace("\r", "").Split('\n'));
+
+
+        //画像・サウンドファイルの番号はイベントによって違うので、名前から参照して番号をつけなおす。
+        string tmp;
+        tmp = objBGM.GetComponent<BGMManager>().copyString.Replace("[system]元ファイル名", objBGM.GetComponent<BGMManager>().chapterName).Replace("\r", "");
+        //コピーされたコマンドが参照する画像サウンドファイルの番号を取得
+        tmp = "\n" + tmp;
+        for (int i = 0; i < scenarioGraphic.Length - 1; i++)
+        {
+            if (tmp.Contains("\nBack:" + i.ToString() + "\r\n") || tmp.Contains("\nBack:" + i.ToString() + "\n") || tmp.Contains("\nChara:" + i.ToString() + ",") || tmp.Contains("\nItem:" + i.ToString() + "\r\n") || tmp.Contains("\nItem:" + i.ToString() + "\n") || tmp.Contains("\nBattle:" + i.ToString() + ",")) { gF[i] = true; }
+        }
+        for (int i = 0; i < scenarioAudio.Length; i++)
+        {
+            if (tmp.Contains("\nBGM:" + i.ToString() + ",") || tmp.Contains("\nSE:" + i.ToString() + "\r\n") || tmp.Contains("\nSE:" + i.ToString() + "\n")) { sF[i] = true; }
+        }
+        for (int i = 0; i < gF.Length; i++)
+        {
+            if (gF[i] == true)
+            {
+                for (int j = 0; j < gFileName.Length; j++)
+                {
+                    if (objBGM.GetComponent<BGMManager>().gFileName[i] == gFileName[j])
+                    {
+                        gF[i] = false;
+                        tmp=tmp.Replace("\nBack:" + i.ToString() + "\r\n", "\nBackTemp:" + j.ToString() + "\r\n").Replace("\nBack:" + i.ToString() + "\n", "\nBackTemp:" + j.ToString() + "\n").Replace("\nChara:" + i.ToString() + ",", "\nCharaTemp:" + j.ToString() + ",").Replace("\nItem:" + i.ToString() + "\r\n", "\nItemTemp:" + j.ToString() + "\r\n").Replace("\nItem:" + i.ToString() + "\n", "\nItemTemp:" + j.ToString() + "\n").Replace("\nBattle:" + i.ToString() + ",", "\nBattleTemp:" + j.ToString() + ",");
+                    }
+                }
+                if (gF[i] == true)
+                {
+                    int j;
+                    for (j = 0; j < gFileName.Length; j++) { if (scenarioGraphic[j] == null) { scenarioGraphic[j]=objBGM.GetComponent<BGMManager>().scenarioGraphic[i];gFileName[j] = objBGM.GetComponent<BGMManager>().gFileName[i]; break; } }
+                    if (j == gFileName.Length)
+                    {
+                        GameObject.Find("Error").GetComponent<Text>().text = "<size=20>そのままでは貼りつけ後の画像ファイル数が100以上になるので、貼りつけたコマンドの選択画像を差し替えました。</size>";
+                        StartCoroutine(ErrorWait());
+                        j = 0;
+                    }
+                    tmp=tmp.Replace("\nBack:" + i.ToString() + "\r\n", "\nBackTemp:" + j.ToString() + "\r\n").Replace("\nBack:" + i.ToString() + "\n", "\nBackTemp:" + j.ToString() + "\n").Replace("\nChara:" + i.ToString() + ",", "\nCharaTemp:" + j.ToString() + ",").Replace("\nItem:" + i.ToString() +"\r\n", "\nItemTemp:" + j.ToString() + "\r\n").Replace("\nItem:" + i.ToString() + "\n", "\nItemTemp:" + j.ToString() + "\n").Replace("\nBattle:" + i.ToString() + ",", "\nBattleTemp:" + j.ToString() + ",");
+                }
+            }
+        }//画像番号(i)をjに置き換える。
+        for (int i = 0; i < sF.Length; i++)
+        {
+            if (sF[i] == true)
+            {
+                for (int j = 0; j < sFileName.Length; j++)
+                {
+                    if (objBGM.GetComponent<BGMManager>().sFileName[i] == sFileName[j])
+                    {
+                        sF[i] = false;
+                        tmp=tmp.Replace("\nBGM:" + i.ToString() + ",", "\nBGMTemp:" + j.ToString() + ",").Replace("\nSE:" + i.ToString() +"\r\n", "\nSETemp:" + j.ToString() + "\r\n").Replace("\nSE:" + i.ToString() + "\n", "\nSETemp:" + j.ToString() + "\n");
+                    }
+                }
+                if (sF[i] == true)
+                {
+                    int j;
+                    for (j = 0; j < sFileName.Length; j++) { if (scenarioAudio[j] == null) { scenarioAudio[j] = objBGM.GetComponent<BGMManager>().scenarioAudio[i]; sFileName[j] = objBGM.GetComponent<BGMManager>().sFileName[i]; break; } }
+                    if (j == sFileName.Length)
+                    {
+                        GameObject.Find("Error").GetComponent<Text>().text = "<size=20>そのままでは貼りつけ後のサウンドファイル数が41以上になるので、貼りつけたコマンドの選択音声を差し替えました。</size>";
+                        StartCoroutine(ErrorWait());
+                        j = 0;
+                    }
+                    tmp=tmp.Replace("\nBGM:" + i.ToString() +",", "\nBGMTemp:" + j.ToString() + ",").Replace("\nSE:" + i.ToString() + "\r\n", "\nSETemp:" + j.ToString() + "\r\n").Replace("\nSE:" + i.ToString() + "\n", "\nSETemp:" + j.ToString() + "\n");
+                }
+            }
+        }//サウンド番号(i)をjに置き換える。
+        tmp=tmp.Replace("\nBackTemp:", "\nBack:").Replace("\nCharaTemp:", "\nChara:").Replace("\nItemTemp:", "\nItem:").Replace("\nBattleTemp:", "\nBattle:").Replace("\nBGMTemp:", "\nBGM:").Replace("\nSETemp:", "\nSE:");//コマンドの名前を戻す（一度変換してるのは番号差替え後のコマンドを再度差替えることにならないように）
+        tmp = tmp.Substring(1);
+
+        List<string> tmpList = new List<string>();
+        tmpList.AddRange(tmp.Split('\n'));
+        strList.InsertRange(selectNum+1, tmpList);
 
         if (strList.Count > 90) //undoList(strList)の段階では最後に空白行があるので90はセーフ。
         {
@@ -1272,11 +1366,11 @@ public class ScenariosceneManager : MonoBehaviour
                 string text = sr.ReadToEnd();
                 for (int i = 0; i < scenarioGraphic.Length-1; i++)
                 {
-                    if (text.Contains("\nBack:" + i.ToString()) || text.Contains("\nChara:" + i.ToString()) || text.Contains("\nItem:" + i.ToString()) || text.Contains("\nBattle:" + i.ToString())) { gF[i] = true; }
+                    if (text.Contains("\nBack:" + i.ToString() + "\r\n") || text.Contains("\nBack:" + i.ToString() + "\n") || text.Contains("\nChara:" + i.ToString() + ",") || text.Contains("\nItem:" + i.ToString() + "\r\n") || text.Contains("\nItem:" + i.ToString() + "\n") || text.Contains("\nBattle:" + i.ToString() + ",")) { gF[i] = true; }
                 }
                 for (int i = 0; i < scenarioAudio.Length; i++)
                 {
-                    if (text.Contains("\nBGM:" + i.ToString()) || text.Contains("\nSE:" + i.ToString())) { sF[i]=true; }
+                    if (text.Contains("\nBGM:" + i.ToString() + ",") || text.Contains("\nSE:" + i.ToString() + "\r\n") || text.Contains("\nSE:" + i.ToString() + "\n")) { sF[i]=true; }
                 }
                 //閉じる
                 sr.Close();

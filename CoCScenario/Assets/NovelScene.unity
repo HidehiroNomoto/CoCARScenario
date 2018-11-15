@@ -12850,7 +12850,7 @@ GameObject:
   - component: {fileID: 581539669}
   - component: {fileID: 581539668}
   m_Layer: 5
-  m_Name: Copy
+  m_Name: CopyButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -25324,7 +25324,7 @@ GameObject:
   - component: {fileID: 1125654511}
   - component: {fileID: 1125654510}
   m_Layer: 5
-  m_Name: Paste
+  m_Name: PasteButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
