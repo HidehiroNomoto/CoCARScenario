@@ -29,6 +29,7 @@ public class MapScene : MonoBehaviour
     public InputField[] inputField=new InputField[14];
     public AudioClip errorSE;
     public GameObject FirstPlace;
+    public GameObject IventMake;
     public int selectBefore=-1;
     public List<int> multiSelect = new List<int>();
     public bool URBool=false;
@@ -40,7 +41,6 @@ public class MapScene : MonoBehaviour
 
     void Start()
     {
-        for (int i = 0; i < 12; i++) { inputField[i] = GameObject.Find("InputField" + i.ToString()).GetComponent<InputField>(); }
         parentObject = GameObject.Find("Content");
         _FILE_HEADER = PlayerPrefs.GetString("進行中シナリオ","");                      //ファイル場所の頭
         longitude=PlayerPrefs.GetFloat("longitude",135.768738f); latitude = PlayerPrefs.GetFloat("latitude", 35.010348f);
@@ -52,9 +52,11 @@ public class MapScene : MonoBehaviour
 
     void Update()
     {
+        bool textFlag = false;
         if (time % 36000 == 0) { System.IO.File.Copy(PlayerPrefs.GetString("進行中シナリオ", ""), "BackUp.zip", true); }
         time++;
-        if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+        for (int x=0;x<inputField.Length;x++) { if (((x<inputField.Length-2 && IventMake.activeSelf) || (x >= inputField.Length - 2 && FirstPlace.activeSelf)) && inputField[x].isFocused) { textFlag = true; } }
+        if (textFlag==false && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
         {
             if (Input.GetKey(KeyCode.Z))
             {
@@ -73,7 +75,7 @@ public class MapScene : MonoBehaviour
         {
             URBool = false;
         }
-        if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+        if (textFlag==false && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
         {
             if (Input.GetKey(KeyCode.C))
             {
@@ -143,6 +145,11 @@ public class MapScene : MonoBehaviour
     public void CopyButton()
     {
         string str = "";
+        if (selectNum < 0) {
+            GameObject.Find("Error").GetComponent<Text>().text = "コマンドを選択してください。";
+            StartCoroutine(ErrorWait());
+            return;
+        }
         if (selectNum == 0)
         {
             GameObject.Find("Error").GetComponent<Text>().text = "スタート地点設定イベントはコピーできません。";
@@ -180,17 +187,21 @@ public class MapScene : MonoBehaviour
     public void PasteButton()
     {
         string str = "";
-        if (objBGM.GetComponent<BGMManager>().copyMapString == "") { return; }
-        List<string> strList = new List<string>();
-        strList.AddRange(undoList[undoListNum].Replace("\r", "").Split('\n'));
-        strList.InsertRange(selectNum + 1, objBGM.GetComponent<BGMManager>().copyMapString.Replace("\r", "").Split('\n'));
-
-        if (strList.Count > 90) //undoList(strList)の段階では最後に空白行があるので90はセーフ。
+        if (objBGM.GetComponent<BGMManager>().copyMapString == "")
         {
-            GameObject.Find("Error").GetComponent<Text>().text = "貼りつけ後のコマンド数が90以上になるので貼りつけられません。";
+            GameObject.Find("Error").GetComponent<Text>().text = "先にコピー元を選んでください。";
             StartCoroutine(ErrorWait());
             return;
         }
+        if (selectNum < 0)
+        {
+            GameObject.Find("Error").GetComponent<Text>().text = "貼り付け先（そのイベントの後ろに挿入されます）が選択されていません。";
+            StartCoroutine(ErrorWait());
+            return;
+        }
+        List<string> strList = new List<string>();
+        strList.AddRange(undoList[undoListNum].Replace("\r", "").Split('\n'));
+        strList.InsertRange(selectNum + 1, objBGM.GetComponent<BGMManager>().copyMapString.Replace("\r", "").Split('\n'));
 
         mapData.Clear();
         for (int i = 0; i < objIB.Count; i++) { Destroy(objIB[i]); }
@@ -255,7 +266,7 @@ public class MapScene : MonoBehaviour
     private void LoadMapData(string path)
     {
         string str2;
-        string[] strs;
+        //string[] strs;
         try
         {
         //閲覧するエントリ
@@ -304,6 +315,7 @@ public class MapScene : MonoBehaviour
             catch{ }
 
             ze = zf.GetEntry("[system]command1[system]PC版スタート地点[system].txt");
+            /*
             try
             {
             if (ze != null)
@@ -327,6 +339,7 @@ public class MapScene : MonoBehaviour
             }
             }
             catch { }
+            */
 
         //閉じる
         zf.Close();
@@ -353,18 +366,12 @@ public class MapScene : MonoBehaviour
             objIB[selectNum + 1].GetComponent<Transform>().SetSiblingIndex(selectNum + 1);
             for (int i = selectNum + 2; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum++; }//追加分の後ろはボタン番号が１増える。
             mapData.Insert(selectNum + 1, "");
-            selectNum++;
         }
         else
         {
-            selectNum = 0;
-            objIB.Insert(selectNum + 1, Instantiate(objIvent) as GameObject);
-            objIB[selectNum + 1].transform.SetParent(parentObject.transform, false);
-            objIB[selectNum + 1].GetComponent<IventButton>().buttonNum = selectNum + 1;
-            objIB[selectNum + 1].GetComponent<Transform>().SetSiblingIndex(selectNum + 1);
-            for (int i = selectNum + 2; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum++; }//追加分の後ろはボタン番号が１増える。
-            mapData.Insert(selectNum + 1, "");
-            selectNum++;
+            GameObject.Find("Error").GetComponent<Text>().text = "追加先が選択されていません（選択されたイベントの後ろに追加します）。";
+            StartCoroutine(ErrorWait());
+            return;
         }
     }
 
@@ -446,6 +453,7 @@ public class MapScene : MonoBehaviour
             if (selectNum > 0)
             {
                 FirstPlace.SetActive(false);
+                IventMake.SetActive(true);
                 strs = mapData[selectNum].Replace("\r","").Replace("\n","").Split(',');
                 inputField[0].text = strs[11].Substring(0, strs[11].Length - 4).Replace("[system]","");
                 inputField[1].text = strs[0];
@@ -464,7 +472,7 @@ public class MapScene : MonoBehaviour
             if (selectNum == 0)
             {
                 FirstPlace.SetActive(true);
-
+                IventMake.SetActive(false);
                     //閲覧するエントリ
                     string extractFile = "[system]command1[system]PC版スタート地点[system].txt";
 
@@ -586,7 +594,7 @@ public class MapScene : MonoBehaviour
                 catch { }
                 //（未）を外す
                 latitude = Convert.ToDouble(inputField[12].text); longitude = Convert.ToDouble(inputField[13].text);
-                objIB[selectNum].GetComponentInChildren<Text>().text = "PC版スタート地点　緯:" + latitude.ToString() + ",経:" + longitude.ToString();
+                //objIB[selectNum].GetComponentInChildren<Text>().text = "PC版スタート地点　緯:" + latitude.ToString() + ",経:" + longitude.ToString();
 
                 str3 = "";
                 for (int i = 0; i < mapData.Count; i++) { if (mapData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str3 = str3 + mapData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }

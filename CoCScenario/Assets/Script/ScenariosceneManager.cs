@@ -60,6 +60,7 @@ public class ScenariosceneManager : MonoBehaviour
     private bool URBool;
     private bool copyBool;
     private int time=0;
+    public InputField[] inputs = new InputField[40];
 
     // Use this for initialization
     void Start()
@@ -83,9 +84,11 @@ public class ScenariosceneManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        bool textFlag = false;
         if (time % 36000 == 0) { File.Copy(PlayerPrefs.GetString("進行中シナリオ", ""), "BackUp.zip", true); }
         time++;
-        if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+        for (int x = 0; x < inputs.Length; x++) { if (inputs[x].GetComponent<InputField>().isFocused) { textFlag = true; } }
+        if (textFlag==false && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
         {
             if (Input.GetKey(KeyCode.Z))
             {
@@ -104,7 +107,7 @@ public class ScenariosceneManager : MonoBehaviour
         {
             URBool = false;  
         }
-        if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+        if (textFlag==false && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
         {
             if (Input.GetKey(KeyCode.C))
             {
@@ -128,6 +131,12 @@ public class ScenariosceneManager : MonoBehaviour
     public void CopyButton()
     {
         string str="";
+        if (selectNum < 0)
+        {
+            GameObject.Find("Error").GetComponent<Text>().text = "コマンドを選択してください。";
+            StartCoroutine(ErrorWait());
+            return;
+        }
         bool[] gF = new bool[scenarioGraphic.Length - 1];
         bool[] sF = new bool[scenarioAudio.Length];
         if (multiSelect.Count == 0)
@@ -170,9 +179,20 @@ public class ScenariosceneManager : MonoBehaviour
     public void PasteButton()
     {
         string str="";
+        if (selectNum < 0)
+        {
+            GameObject.Find("Error").GetComponent<Text>().text = "貼り付け先（そのコマンドの後ろに挿入されます）が選択されていません。";
+            StartCoroutine(ErrorWait());
+            return;
+        }
         bool[] gF = new bool[scenarioGraphic.Length - 1];
         bool[] sF = new bool[scenarioAudio.Length];
-        if (objBGM.GetComponent<BGMManager>().copyString == "") { return; }
+        if (objBGM.GetComponent<BGMManager>().copyString == "")
+        {
+            GameObject.Find("Error").GetComponent<Text>().text = "先にコピー元を選んでください。";
+            StartCoroutine(ErrorWait());
+            return;
+        }
         List<string> strList = new List<string>();
         strList.AddRange(undoList[undoListNum].Replace("\r", "").Split('\n'));
 
@@ -1133,8 +1153,6 @@ public class ScenariosceneManager : MonoBehaviour
                 else if (commandData[i].Length > 6 && commandData[i].Substring(0, 6) == "Equal:") { NextSkipMake(20, i); }
                 else { NextSkipMake(0, i); }
             }//追加分の後ろはボタン番号が１増える。
-
-            selectNum++;
 
             str = "";
             for (int i = 0; i < commandData.Count; i++) { if (commandData[i].Replace("\n", "").Replace("\r", "") == "") { str = str + "Title:(未設定コマンド。タイトルバックとして機能します)\r\n"; continue; } str = str + commandData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
