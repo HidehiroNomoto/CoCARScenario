@@ -55,7 +55,7 @@ public class MapScene : MonoBehaviour
         bool textFlag = false;
         if (time % 36000 == 0) { System.IO.File.Copy(PlayerPrefs.GetString("進行中シナリオ", ""), "BackUp.zip", true); }
         time++;
-        for (int x=0;x<inputField.Length;x++) { if (((x<inputField.Length-2 && IventMake.activeSelf) || (x >= inputField.Length - 2 && FirstPlace.activeSelf)) && inputField[x].isFocused) { textFlag = true; } }
+        for (int x = 0; x < inputField.Length; x++) { if (inputField[x].isFocused) { textFlag = true; } }
         if (textFlag==false && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
         {
             if (Input.GetKey(KeyCode.Z))
