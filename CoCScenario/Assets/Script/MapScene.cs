@@ -49,7 +49,17 @@ public class MapScene : MonoBehaviour
         objBGM= GameObject.Find("BGMManager").gameObject as GameObject;
         LoadMapData("[system]mapdata[system].txt");
         GetMap();
+        //フォントの表示バグを修正するための処理（Unity固有のもの）
+        Font.textureRebuilt += CallBackReMakeTextObject;
     }
+    //フォントバグ対策のコールバック
+    System.Action<Font> CallBackReMakeTextObject = (n) =>
+    {
+        Text[] objects;
+        objects = FindObjectsOfType<Text>();
+        for (int i = 0; i < objects.Length; i++) { objects[i].FontTextureChanged(); }
+    };
+
 
     void Update()
     {

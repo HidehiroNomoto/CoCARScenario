@@ -24,7 +24,7 @@ Application.platform == RuntimePlatform.LinuxPlayer)
         }
         selectObj = GameObject.Find("SelectButton");
         startObj = GameObject.Find("StartButton");
-        nameObj = GameObject.Find("InputField");nameObj.SetActive(false);
+        nameObj = GameObject.Find("InputField"); nameObj.SetActive(false);
         //スライダーの現在位置をセーブされていた位置にする。
         GameObject.Find("SliderBGM").GetComponent<Slider>().value = PlayerPrefs.GetFloat("BGMVolume", 0.8f);
         GameObject.Find("SliderSE").GetComponent<Slider>().value = PlayerPrefs.GetFloat("SEVolume", 0.8f);

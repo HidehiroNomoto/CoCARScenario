@@ -23,7 +23,6 @@ public class Utility : MonoBehaviour {
 		
 	}
 
-
     public IEnumerator LoadSceneCoroutine(string scene)
     {
         SceneManager.LoadScene(scene);
@@ -139,4 +138,10 @@ public class Utility : MonoBehaviour {
         yield return new WaitForSeconds(waitTime);
         Application.OpenURL(URL);
     }
+
+
+
+
+
+
 }

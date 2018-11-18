@@ -79,11 +79,19 @@ public class ScenariosceneManager : MonoBehaviour
         commandName = "[system]command1" + objBGM.GetComponent<BGMManager>().chapterName;
         titleText.GetComponent<Text>().text = "[コマンド]command1" + "\n" + objBGM.GetComponent<BGMManager>().chapterName.Substring(0, objBGM.GetComponent<BGMManager>().chapterName.Length - 4).Replace("[system]", "[イベント]");
         StartScene();
+    //フォントの表示バグを修正するための処理（Unity固有のもの）
+    Font.textureRebuilt += CallBackReMakeTextObject;
     }
+//フォントバグ対策のコールバック
+System.Action<Font> CallBackReMakeTextObject = (n) =>
+{
+    Text[] objects;
+    objects = FindObjectsOfType<Text>();
+    for (int i = 0; i < objects.Length; i++) { objects[i].FontTextureChanged(); }
+};
 
-
-    // Update is called once per frame
-    void Update()
+// Update is called once per frame
+void Update()
     {
         bool textFlag = false;
         if (time % 36000 == 0) { File.Copy(PlayerPrefs.GetString("進行中シナリオ", ""), "BackUp.zip", true); }
@@ -217,7 +225,7 @@ public class ScenariosceneManager : MonoBehaviour
             {
                 for (int j = 0; j < gFileName.Length; j++)
                 {
-                    if (objBGM.GetComponent<BGMManager>().gFileName[i] == gFileName[j])
+                    if (Path.GetFileName(objBGM.GetComponent<BGMManager>().gFileName[i]) == Path.GetFileName(gFileName[j]))
                     {
                         gF[i] = false;
                         tmp=tmp.Replace("\nBack:" + i.ToString() + "\r\n", "\nBackTemp:" + j.ToString() + "\r\n").Replace("\nBack:" + i.ToString() + "\n", "\nBackTemp:" + j.ToString() + "\n").Replace("\nChara:" + i.ToString() + ",", "\nCharaTemp:" + j.ToString() + ",").Replace("\nItem:" + i.ToString() + "\r\n", "\nItemTemp:" + j.ToString() + "\r\n").Replace("\nItem:" + i.ToString() + "\n", "\nItemTemp:" + j.ToString() + "\n").Replace("\nBattle:" + i.ToString() + ",", "\nBattleTemp:" + j.ToString() + ",");
@@ -243,7 +251,7 @@ public class ScenariosceneManager : MonoBehaviour
             {
                 for (int j = 0; j < sFileName.Length; j++)
                 {
-                    if (objBGM.GetComponent<BGMManager>().sFileName[i] == sFileName[j])
+                    if (Path.GetFileName(objBGM.GetComponent<BGMManager>().sFileName[i]) == Path.GetFileName(sFileName[j]))
                     {
                         sF[i] = false;
                         tmp=tmp.Replace("\nBGM:" + i.ToString() + ",", "\nBGMTemp:" + j.ToString() + ",").Replace("\nSE:" + i.ToString() +"\r\n", "\nSETemp:" + j.ToString() + "\r\n").Replace("\nSE:" + i.ToString() + "\n", "\nSETemp:" + j.ToString() + "\n");
