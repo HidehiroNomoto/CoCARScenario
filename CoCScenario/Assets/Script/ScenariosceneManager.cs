@@ -61,6 +61,7 @@ public class ScenariosceneManager : MonoBehaviour
     private bool copyBool;
     private int time=0;
     public InputField[] inputs = new InputField[41];
+    public int fallNum=0;
 
     // Use this for initialization
     void Start()

@@ -38,6 +38,7 @@ public class MapScene : MonoBehaviour
     private bool copyBool = false;
     public List<string> tmpList = new List<string>();//test
     private int time = 0;
+    public int fallNum = 0;
 
     void Start()
     {

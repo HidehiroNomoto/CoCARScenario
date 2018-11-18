@@ -5,33 +5,49 @@ public class Drag : MonoBehaviour
 {
     public GameObject copy;
     bool dragFlag=false;
-    float beforepoint;
-    float afterpoint;
 
     private void Start()
     {
         copy = GameObject.Find("Copy");
     }
 
+    public void OnPointer()
+    {
+        if (this.name.Contains("Ivent"))
+        {
+            if (this.GetComponent<IventButton>().buttonNum==0) { return; }
+            MapScene m1 = GameObject.Find("GameObject").GetComponent<MapScene>();
+            m1.fallNum = this.GetComponent<IventButton>().buttonNum;
+        }
+        if (this.name.Contains("Command"))
+        {
+            ScenariosceneManager s1 = GameObject.Find("NovelManager").GetComponent<ScenariosceneManager>();
+            s1.fallNum = this.GetComponent<CommandButton>().buttonNum;
+        }
+    }
+
     public void DragStart()
     {
         if (this.name.Contains("Ivent"))
         {
-            if (this.GetComponentInChildren<Text>().text.Contains("[system]")) { return; }
             MapScene m1 = GameObject.Find("GameObject").GetComponent<MapScene>();
+            if (m1.selectNum == 0) { return; }
             this.GetComponent<IventButton>().PushIventButton();
+            m1.fallNum = this.GetComponent<IventButton>().buttonNum;
+            for (int i = 0; i < m1.multiSelect.Count; i++) { m1.objIB[m1.multiSelect[i]].GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f); }
+            m1.multiSelect.Clear();
         }
         if (this.name.Contains("Command"))
         {
             ScenariosceneManager s1 = GameObject.Find("NovelManager").GetComponent<ScenariosceneManager>();
             this.GetComponent<CommandButton>().PushCommandButton();
+            s1.fallNum = this.GetComponent<CommandButton>().buttonNum;
+            for (int i = 0; i < s1.multiSelect.Count; i++) { s1.objCB[s1.multiSelect[i]].GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f); }
+            s1.multiSelect.Clear();
         }
         dragFlag = true;
         copy.SetActive(true);
         copy.transform.Find("Text").GetComponent<Text>().text = this.GetComponentInChildren<Text>().text;
-        Vector3 TapPos = Input.mousePosition;
-        TapPos.z = 10f;
-        beforepoint = TapPos.y;
     }
 
     public void OnDrag()
@@ -51,15 +67,12 @@ public class Drag : MonoBehaviour
         copy.SetActive(false);
         dragFlag = false;
         int afterSelect = 0;
-        Vector3 TapPos = Input.mousePosition;
-        TapPos.z = 10f;
-        afterpoint = TapPos.y;
+
         if (this.name.Contains("Ivent"))
         {
             MapScene m1 = GameObject.Find("GameObject").GetComponent<MapScene>();
-            afterSelect = m1.selectNum - (int)(afterpoint - beforepoint) / 25;
-            if (afterpoint - beforepoint > 0) { afterSelect--; }
-            if (afterpoint - beforepoint < 0) { afterSelect++; }
+
+            afterSelect = m1.fallNum;
             if (afterSelect > 0 && afterSelect<m1.mapData.Count)
             {
                 if (afterSelect < m1.selectNum)
@@ -93,9 +106,7 @@ public class Drag : MonoBehaviour
         if (this.name.Contains("Command"))
         {
             ScenariosceneManager s1 = GameObject.Find("NovelManager").GetComponent<ScenariosceneManager>();
-            afterSelect = s1.selectNum - (int)(afterpoint - beforepoint) / 25;
-            if (afterpoint - beforepoint > 0) { afterSelect--; }
-            if (afterpoint - beforepoint < 0) { afterSelect++; }
+            afterSelect = s1.fallNum;
             if (afterSelect >= 0 && afterSelect<s1.commandData.Count)
             {
                 if (afterSelect < s1.selectNum)
