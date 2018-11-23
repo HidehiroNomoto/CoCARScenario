@@ -761,7 +761,7 @@ void Update()
         if (num == 20) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "" || GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("Error").GetComponent<Text>().text = "必要項目が入力されていません。"; StartCoroutine(ErrorWait()); return; } commandText = "Equal:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "：") + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "："); }
         if (num == 21) { commandText = "Lost:"; }
         if (num == 22) { commandText = "Title:"; }
-        if (num == 23) { if (GameObject.Find("Toggle").GetComponent<Toggle>().isOn == false) { commandText = "Map:Once"; } else { commandText = "Map:Anytime"; } }
+        if (num == 23) { commandText = "Map:Once";}
         if (num == 24)
         {
             if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") {commandFileNum++;SaveCommandFileNum(); commandText = "NextFile:" + "[system]NoName" + commandFileNum.ToString() + objBGM.GetComponent<BGMManager>().chapterName; }
@@ -981,6 +981,18 @@ void Update()
         {
             yield return new WaitForEndOfFrame();
         }
+
+        if (graphicNum >= scenarioGraphic.Length - 1)
+        {
+            GameObject.Find("Error").GetComponent<Text>().text = "画像ファイル数が９９個を越えたため読み込めなかったファイルがあります。";
+            StartCoroutine(ErrorWait());
+        }
+        if (soundNum >= scenarioAudio.Length)
+        {
+            GameObject.Find("Error").GetComponent<Text>().text = "サウンドファイル数が４０個を越えたため読み込めなかったファイルがあります。";
+            StartCoroutine(ErrorWait());
+        }
+
         //pngファイルの場合
         if (path.Substring(path.Length - 4) == ".png")
         {
@@ -1297,7 +1309,7 @@ void Update()
             if (strs[0] == "Equal") { if (objMake[20].activeSelf == false) { CommandButton(20); } GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; }
             if (strs[0] == "Lost") { if (objMake[21].activeSelf == false) { CommandButton(21); } }
             if (strs[0] == "Title") { if (objMake[22].activeSelf == false) { CommandButton(22); } }
-            if (strs[0] == "Map") { if (objMake[23].activeSelf == false) { CommandButton(23); } if (strs[1] == "Once") { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = false; } else { GameObject.Find("Toggle").GetComponent<Toggle>().isOn = true; } }
+            if (strs[0] == "Map") { if (objMake[23].activeSelf == false) { CommandButton(23); }}
             if (strs[0] == "NextFile") { if (objMake[24].activeSelf == false) { CommandButton(24); } GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1].Substring(8,strs[1].Length-8-objBGM.GetComponent<BGMManager>().chapterName.Length); }
             if (strs[0] == "BlackOut") { if (objMake[25].activeSelf == false) { CommandButton(25); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = strs[2]; GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[3]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[4]; }
             if (strs[0] == "PlaceChange") { if (objMake[26].activeSelf == false) { CommandButton(26); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = strs[2]; }

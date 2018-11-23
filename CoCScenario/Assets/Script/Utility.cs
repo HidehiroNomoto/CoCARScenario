@@ -10,7 +10,7 @@ public class Utility : MonoBehaviour {
     private bool fadeFlag;                                      //フェードイン・フェードアウト中か否か
     public bool pushObjectFlag;                                 //ボタンオブジェクトのタップ(true)か画面自体（ストーリー進行）のタップ(false)かの判定
     public bool selectFlag;                                     //選択待ち中、どれかが選択されたか否かの判定
-
+    public bool prints=false;
     // Use this for initialization
     void Start () {
         objBGM = GameObject.Find("BGMManager").gameObject as GameObject;
@@ -20,7 +20,8 @@ public class Utility : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		
+        if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.P)) { if (prints == false) { ScreenCapture.CaptureScreenshot(PlayerPrefs.GetInt("スクリーンショット", 0).ToString() + ".png"); PlayerPrefs.SetInt("スクリーンショット", PlayerPrefs.GetInt("スクリーンショット", 0) + 1); prints = true; } }
+        else { prints = false; }
 	}
 
     public IEnumerator LoadSceneCoroutine(string scene)
