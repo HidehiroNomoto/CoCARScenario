@@ -593,6 +593,9 @@ public class MapScene : MonoBehaviour
                 //ZipFileの更新をコミット
                 zf.CommitUpdate();
 
+                objIB[selectNum].GetComponentInChildren<Text>().text = MapDataToButton(mapData[selectNum]);
+                ScenarioFileCheck(selectNum, zf);
+
                 //閉じる
                 zf.Close();
 
@@ -603,9 +606,7 @@ public class MapScene : MonoBehaviour
                     System.IO.File.Delete(file2);
                 }
                 catch { }
-                //（未）を外す
                 latitude = Convert.ToDouble(inputField[12].text); longitude = Convert.ToDouble(inputField[13].text);
-                //objIB[selectNum].GetComponentInChildren<Text>().text = "PC版スタート地点　緯:" + latitude.ToString() + ",経:" + longitude.ToString();
 
                 str3 = "";
                 for (int i = 0; i < mapData.Count; i++) { if (mapData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str3 = str3 + mapData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }

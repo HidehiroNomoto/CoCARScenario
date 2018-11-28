@@ -145,7 +145,7 @@ PlayerSettings:
   resolutionScalingMode: 0
   applicationIdentifier:
     Android: com.brainmixer.CoCAR
-    Standalone: com.brainmixer.CoCARSM
+    Standalone: com.Brainmixer.CoCARSM
   buildNumber: {}
   AndroidBundleVersionCode: 1
   AndroidMinSdkVersion: 16
