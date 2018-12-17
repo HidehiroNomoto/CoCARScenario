@@ -442,7 +442,7 @@ namespace ICSharpCode.SharpZipLib.Zip
 		/// </summary>
 		public static int DefaultCodePage {
 			get {
-                defaultCodePage = 65001; //★追加。cp932はAndroid等でエラー吐くので無理やりUTF8にして読ませる。
+                defaultCodePage = 65001;//★追加。一部のcpはAndroid等でエラー吐くので無理やりUTF8(cp65001)にして読ませる。
                 return defaultCodePage;
 			}
 			set {
