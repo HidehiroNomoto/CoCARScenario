@@ -745,11 +745,13 @@ void Update()
         if (num == 11)
         {
             string tmp="";
+            string tmp2 = "";
             if (GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text != "" && GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text != "") { GameObject.Find("Error").GetComponent<Text>().text = "割算か掛算のどちらか一つだけを入力してください。"; StartCoroutine(ErrorWait()); return; }
             if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text!="") { tmp = "*" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text; }
             if (GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text != "") { tmp = "/" + GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text; }
             if (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text== "") { GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = "0"; }
-            commandText ="Hantei:" + GameObject.Find("Label1").GetComponent<Text>().text + tmp + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text;
+            if (GameObject.Find("Label1").GetComponent<Text>().text != "フラグの値で判定する") { tmp2 = GameObject.Find("Label1").GetComponent<Text>().text; } else { tmp2 = GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text; }
+            commandText ="Hantei:" + tmp2 + tmp + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text;
         }
         if (num == 12) { for (int i = 2; i < 5; i++) { if (GameObject.Find("InputFieldText (" + i.ToString() + ")").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (" + i.ToString() + ")").GetComponent<InputField>().text = "0"; } }
              if (GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text = "逃走"; }
@@ -1332,7 +1334,7 @@ void Update()
             if (strs[0] == "Shake") { if (objMake[8].activeSelf == false) { CommandButton(8); } }
             if (strs[0] == "Jump") { if (objMake[9].activeSelf == false) { CommandButton(9); } GameObject.Find("Slider").GetComponent<Slider>().value = int.Parse(strs[1]); }
             if (strs[0] == "Select") { if (objMake[10].activeSelf == false) { CommandButton(10); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = strs[2]; GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[3]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[4]; }
-            if (strs[0] == "Hantei") { if (objMake[11].activeSelf == false) { CommandButton(11); } string[] tmpstr = strs[1].Split(new char[] { '/', '*' }); GameObject.Find("Dropdown1").GetComponent<Dropdown>().value = SkillList2(tmpstr[0]); if (strs[1].Contains("*")) { GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = tmpstr[1]; } if (strs[1].Contains("/")) { GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text = tmpstr[1]; } GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; }
+            if (strs[0] == "Hantei") { if (objMake[11].activeSelf == false) { CommandButton(11); } string[] tmpstr = strs[1].Split(new char[] { '/', '*' }); GameObject.Find("Dropdown1").GetComponent<Dropdown>().value = SkillList2(tmpstr[0]);if (GameObject.Find("Dropdown1").GetComponent<Dropdown>().value == 70) { GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text = tmpstr[0]; } else { GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text = ""; } if (strs[1].Contains("*")) { GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = tmpstr[1]; } if (strs[1].Contains("/")) { GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text = tmpstr[1]; } GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; }
             if (strs[0] == "Battle") { if (objMake[12].activeSelf == false) { CommandButton(12); } selectGS = int.Parse(strs[1]); try { objGSB = GameObject.Find("GS" + selectGS.ToString()); objGSB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 0); } catch { } GameObject.Find("Dropdown1").GetComponent<Dropdown>().value = int.Parse(strs[2]) - 1; GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[3]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[4]; GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text = strs[5]; GameObject.Find("Dropdown2").GetComponent<Dropdown>().value = int.Parse(strs[6]) - 1; int k = 0; if (strs[7] == "4") { k = 0; } if (strs[7] == "6") { k = 1; } if (strs[7] == "10") { k = 2; } if (strs[7] == "100") { k = 3; } GameObject.Find("Dropdown3").GetComponent<Dropdown>().value = k; if (strs[8] == "true") { GameObject.Find("Toggle1").GetComponent<Toggle>().isOn = true; } else { GameObject.Find("Toggle1").GetComponent<Toggle>().isOn = false; } GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text = strs[9]; GameObject.Find("Dropdown4").GetComponent<Dropdown>().value = SkillList2(strs[10]); GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text = strs[11]; GameObject.Find("InputFieldText (8)").GetComponent<InputField>().text = strs[12]; if (strs[13] == "true") { GameObject.Find("Toggle2").GetComponent<Toggle>().isOn = true; } else { GameObject.Find("Toggle2").GetComponent<Toggle>().isOn = false; } }
             if (strs[0] == "FlagBranch") { if (objMake[13].activeSelf == false) { CommandButton(13); } GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; }
             if (strs[0] == "FlagChange") { if (objMake[14].activeSelf == false) { CommandButton(14); } GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text = strs[3]; }
@@ -1498,7 +1500,7 @@ void Update()
 
     private int SkillList2(string targetStr)
     {
-        int target = 0;
+        int target = 70;
         if (targetStr == "言いくるめ") { target = 11; }
         if (targetStr == "医学") { target = 12; }
         if (targetStr == "運転") { target = 13; }
@@ -1569,6 +1571,7 @@ void Update()
         if (targetStr == "APP") { target = 7; }
         if (targetStr == "最大マジック・ポイント") { target = 8; }
         if (targetStr == "最大耐久力") { target = 9; }
+        if (targetStr == "フラグの値で判定する") { target = 70; }
         return target;
     }
 
