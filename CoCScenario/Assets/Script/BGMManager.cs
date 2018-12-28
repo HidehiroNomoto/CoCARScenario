@@ -11,6 +11,7 @@ public class BGMManager : MonoBehaviour {
     public int multiPlay = 0;
     public string copyString = "";
     public string copyMapString = "";
+    public string copyivent = "";
     public string[] gFileName = new string[99];
     public string[] sFileName = new string[40];
     public Sprite[] scenarioGraphic = new Sprite[100];       //シナリオ画像保存変数

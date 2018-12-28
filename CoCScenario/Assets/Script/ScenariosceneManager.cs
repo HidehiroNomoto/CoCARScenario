@@ -53,15 +53,15 @@ public class ScenariosceneManager : MonoBehaviour
     public GameObject titleText;
     public int selectBefore = -1;
     public List<int> multiSelect = new List<int>();
-    public int errorFlag=0;
+    public int errorFlag = 0;
     private bool NCBFlag = false;
     private List<string> undoList = new List<string>();
-    private int undoListNum=0;
+    private int undoListNum = 0;
     private bool URBool;
     private bool copyBool;
-    private int time=0;
+    private int time = 0;
     public InputField[] inputs = new InputField[42];
-    public int fallNum=0;
+    public int fallNum = 0;
 
     // Use this for initialization
     void Start()
@@ -79,25 +79,25 @@ public class ScenariosceneManager : MonoBehaviour
         commandName = "[system]command1" + objBGM.GetComponent<BGMManager>().chapterName;
         titleText.GetComponent<Text>().text = "[コマンド]command1" + "\n" + objBGM.GetComponent<BGMManager>().chapterName.Substring(0, objBGM.GetComponent<BGMManager>().chapterName.Length - 4).Replace("[system]", "[イベント]");
         StartScene();
-    //フォントの表示バグを修正するための処理（Unity固有のもの）
-    Font.textureRebuilt += CallBackReMakeTextObject;
+        //フォントの表示バグを修正するための処理（Unity固有のもの）
+        Font.textureRebuilt += CallBackReMakeTextObject;
     }
-//フォントバグ対策のコールバック
-System.Action<Font> CallBackReMakeTextObject = (n) =>
-{
-    Text[] objects;
-    objects = FindObjectsOfType<Text>();
-    for (int i = 0; i < objects.Length; i++) { objects[i].FontTextureChanged(); }
-};
+    //フォントバグ対策のコールバック
+    System.Action<Font> CallBackReMakeTextObject = (n) =>
+    {
+        Text[] objects;
+        objects = FindObjectsOfType<Text>();
+        for (int i = 0; i < objects.Length; i++) { objects[i].FontTextureChanged(); }
+    };
 
-// Update is called once per frame
-void Update()
+    // Update is called once per frame
+    void Update()
     {
         bool textFlag = false;
         if (time % 36000 == 0) { File.Copy(PlayerPrefs.GetString("進行中シナリオ", ""), "BackUp.zip", true); }
         time++;
         for (int x = 0; x < inputs.Length; x++) { if (inputs[x].GetComponent<InputField>().isFocused) { textFlag = true; } }
-        if (textFlag==false && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
+        if (textFlag == false && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
         {
             if (Input.GetKey(KeyCode.Z))
             {
@@ -114,9 +114,9 @@ void Update()
         }
         else
         {
-            URBool = false;  
+            URBool = false;
         }
-        if (textFlag==false && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
+        if (textFlag == false && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
         {
             if (Input.GetKey(KeyCode.C))
             {
@@ -139,7 +139,7 @@ void Update()
 
     public void CopyButton()
     {
-        string str="";
+        string str = "";
         if (selectNum < 0)
         {
             GameObject.Find("Error").GetComponent<Text>().text = "コマンドを選択してください。";
@@ -150,44 +150,44 @@ void Update()
         bool[] sF = new bool[scenarioAudio.Length];
         if (multiSelect.Count == 0)
         {
-            str = commandData[selectNum].Replace("\r","").Replace("\n","") + "\r\n";
+            str = commandData[selectNum].Replace("\r", "").Replace("\n", "") + "\r\n";
         }
         else if (multiSelect[0] > selectNum)
         {
             str = str + commandData[selectNum].Replace("\r", "").Replace("\n", "") + "\r\n";
-            for (int i = multiSelect.Count-1; i>=0; i--) { str = str + commandData[multiSelect[i]].Replace("\r", "").Replace("\n", "") + "\r\n"; }
+            for (int i = multiSelect.Count - 1; i >= 0; i--) { str = str + commandData[multiSelect[i]].Replace("\r", "").Replace("\n", "") + "\r\n"; }
         }
         else if (multiSelect[0] < selectNum)
         {
-            for (int i = 0; i <multiSelect.Count; i++) { str = str + commandData[multiSelect[i]].Replace("\r", "").Replace("\n", "") + "\r\n"; }
+            for (int i = 0; i < multiSelect.Count; i++) { str = str + commandData[multiSelect[i]].Replace("\r", "").Replace("\n", "") + "\r\n"; }
             str = str + commandData[selectNum].Replace("\r", "").Replace("\n", "") + "\r\n";
         }
         //strの最後の\r\nはいらない
         str = str.Substring(0, str.Length - 2);
-        str = str.Replace(objBGM.GetComponent<BGMManager>().chapterName,"[system]元ファイル名");
+        str = str.Replace(objBGM.GetComponent<BGMManager>().chapterName, "[system]元ファイル名");
 
         //コピーされたコマンドが参照する画像サウンドファイルの番号を取得
         str = "\n" + str;
         for (int i = 0; i < scenarioGraphic.Length - 1; i++)
         {
-            if (str.Contains("\nBack:" + i.ToString()) || str.Contains("\nChara:" + i.ToString()) || str.Contains("\nItem:" + i.ToString()) || str.Contains("\nBattle:" + i.ToString())) { gF[i] = true; }
+            if (str.Contains("\nBack:" + i.ToString() + "\n") || str.Contains("\nBack:" + i.ToString() + "\r\n") || str.Contains("\nChara:" + i.ToString() + ",") || str.Contains("\nItem:" + i.ToString() + "\n") || str.Contains("\nItem:" + i.ToString() + "\r\n") || str.Contains("\nBattle:" + i.ToString() + ",")) { gF[i] = true; }
         }
         for (int i = 0; i < scenarioAudio.Length; i++)
         {
-            if (str.Contains("\nBGM:" + i.ToString()) || str.Contains("\nSE:" + i.ToString())) { sF[i] = true; }
+            if (str.Contains("\nBGM:" + i.ToString() + ",") || str.Contains("\nSE:" + i.ToString() + "\n") || str.Contains("\nSE:" + i.ToString() + "\r\n")) { sF[i] = true; }
         }
         str = str.Substring(1);
 
         //コピーされたコマンドが参照する画像サウンドファイルの名前を取得。画像サウンドファイル自体も一時保存。
-        for (int i = 0; i < gF.Length; i++) { if (gF[i] == true) { objBGM.GetComponent<BGMManager>().gFileName[i] = gFileName[i]; objBGM.GetComponent<BGMManager>().scenarioGraphic[i]=scenarioGraphic[i]; } }
+        for (int i = 0; i < gF.Length; i++) { if (gF[i] == true) { objBGM.GetComponent<BGMManager>().gFileName[i] = gFileName[i]; objBGM.GetComponent<BGMManager>().scenarioGraphic[i] = scenarioGraphic[i]; } }
         for (int i = 0; i < sF.Length; i++) { if (sF[i] == true) { objBGM.GetComponent<BGMManager>().sFileName[i] = sFileName[i]; objBGM.GetComponent<BGMManager>().scenarioAudio[i] = scenarioAudio[i]; } }
 
-        objBGM.GetComponent<BGMManager>().copyString=str;
+        objBGM.GetComponent<BGMManager>().copyString = str;
     }
 
     public void PasteButton()
     {
-        string str="";
+        string str = "";
         if (selectNum < 0)
         {
             GameObject.Find("Error").GetComponent<Text>().text = "貼り付け先（そのコマンドの後ろに挿入されます）が選択されていません。";
@@ -228,20 +228,20 @@ void Update()
                     if (Path.GetFileName(objBGM.GetComponent<BGMManager>().gFileName[i]) == Path.GetFileName(gFileName[j]))
                     {
                         gF[i] = false;
-                        tmp=tmp.Replace("\nBack:" + i.ToString() + "\r\n", "\nBackTemp:" + j.ToString() + "\r\n").Replace("\nBack:" + i.ToString() + "\n", "\nBackTemp:" + j.ToString() + "\n").Replace("\nChara:" + i.ToString() + ",", "\nCharaTemp:" + j.ToString() + ",").Replace("\nItem:" + i.ToString() + "\r\n", "\nItemTemp:" + j.ToString() + "\r\n").Replace("\nItem:" + i.ToString() + "\n", "\nItemTemp:" + j.ToString() + "\n").Replace("\nBattle:" + i.ToString() + ",", "\nBattleTemp:" + j.ToString() + ",");
+                        tmp = tmp.Replace("\nBack:" + i.ToString() + "\r\n", "\nBackTemp:" + j.ToString() + "\r\n").Replace("\nBack:" + i.ToString() + "\n", "\nBackTemp:" + j.ToString() + "\n").Replace("\nChara:" + i.ToString() + ",", "\nCharaTemp:" + j.ToString() + ",").Replace("\nItem:" + i.ToString() + "\r\n", "\nItemTemp:" + j.ToString() + "\r\n").Replace("\nItem:" + i.ToString() + "\n", "\nItemTemp:" + j.ToString() + "\n").Replace("\nBattle:" + i.ToString() + ",", "\nBattleTemp:" + j.ToString() + ",");
                     }
                 }
                 if (gF[i] == true)
                 {
                     int j;
-                    for (j = 0; j < gFileName.Length; j++) { if (scenarioGraphic[j] == null) { scenarioGraphic[j]=objBGM.GetComponent<BGMManager>().scenarioGraphic[i];gFileName[j] = objBGM.GetComponent<BGMManager>().gFileName[i]; break; } }
+                    for (j = 0; j < gFileName.Length; j++) { if (scenarioGraphic[j] == null) { scenarioGraphic[j] = objBGM.GetComponent<BGMManager>().scenarioGraphic[i]; gFileName[j] = objBGM.GetComponent<BGMManager>().gFileName[i]; break; } }
                     if (j == gFileName.Length)
                     {
                         GameObject.Find("Error").GetComponent<Text>().text = "<size=20>そのままでは貼りつけ後の画像ファイル数が100以上になるので、貼りつけたコマンドの選択画像を差し替えました。</size>";
                         StartCoroutine(ErrorWait());
                         j = 0;
                     }
-                    tmp=tmp.Replace("\nBack:" + i.ToString() + "\r\n", "\nBackTemp:" + j.ToString() + "\r\n").Replace("\nBack:" + i.ToString() + "\n", "\nBackTemp:" + j.ToString() + "\n").Replace("\nChara:" + i.ToString() + ",", "\nCharaTemp:" + j.ToString() + ",").Replace("\nItem:" + i.ToString() +"\r\n", "\nItemTemp:" + j.ToString() + "\r\n").Replace("\nItem:" + i.ToString() + "\n", "\nItemTemp:" + j.ToString() + "\n").Replace("\nBattle:" + i.ToString() + ",", "\nBattleTemp:" + j.ToString() + ",");
+                    tmp = tmp.Replace("\nBack:" + i.ToString() + "\r\n", "\nBackTemp:" + j.ToString() + "\r\n").Replace("\nBack:" + i.ToString() + "\n", "\nBackTemp:" + j.ToString() + "\n").Replace("\nChara:" + i.ToString() + ",", "\nCharaTemp:" + j.ToString() + ",").Replace("\nItem:" + i.ToString() + "\r\n", "\nItemTemp:" + j.ToString() + "\r\n").Replace("\nItem:" + i.ToString() + "\n", "\nItemTemp:" + j.ToString() + "\n").Replace("\nBattle:" + i.ToString() + ",", "\nBattleTemp:" + j.ToString() + ",");
                 }
             }
         }//画像番号(i)をjに置き換える。
@@ -254,7 +254,7 @@ void Update()
                     if (Path.GetFileName(objBGM.GetComponent<BGMManager>().sFileName[i]) == Path.GetFileName(sFileName[j]))
                     {
                         sF[i] = false;
-                        tmp=tmp.Replace("\nBGM:" + i.ToString() + ",", "\nBGMTemp:" + j.ToString() + ",").Replace("\nSE:" + i.ToString() +"\r\n", "\nSETemp:" + j.ToString() + "\r\n").Replace("\nSE:" + i.ToString() + "\n", "\nSETemp:" + j.ToString() + "\n");
+                        tmp = tmp.Replace("\nBGM:" + i.ToString() + ",", "\nBGMTemp:" + j.ToString() + ",").Replace("\nSE:" + i.ToString() + "\r\n", "\nSETemp:" + j.ToString() + "\r\n").Replace("\nSE:" + i.ToString() + "\n", "\nSETemp:" + j.ToString() + "\n");
                     }
                 }
                 if (sF[i] == true)
@@ -267,16 +267,16 @@ void Update()
                         StartCoroutine(ErrorWait());
                         j = 0;
                     }
-                    tmp=tmp.Replace("\nBGM:" + i.ToString() +",", "\nBGMTemp:" + j.ToString() + ",").Replace("\nSE:" + i.ToString() + "\r\n", "\nSETemp:" + j.ToString() + "\r\n").Replace("\nSE:" + i.ToString() + "\n", "\nSETemp:" + j.ToString() + "\n");
+                    tmp = tmp.Replace("\nBGM:" + i.ToString() + ",", "\nBGMTemp:" + j.ToString() + ",").Replace("\nSE:" + i.ToString() + "\r\n", "\nSETemp:" + j.ToString() + "\r\n").Replace("\nSE:" + i.ToString() + "\n", "\nSETemp:" + j.ToString() + "\n");
                 }
             }
         }//サウンド番号(i)をjに置き換える。
-        tmp=tmp.Replace("\nBackTemp:", "\nBack:").Replace("\nCharaTemp:", "\nChara:").Replace("\nItemTemp:", "\nItem:").Replace("\nBattleTemp:", "\nBattle:").Replace("\nBGMTemp:", "\nBGM:").Replace("\nSETemp:", "\nSE:");//コマンドの名前を戻す（一度変換してるのは番号差替え後のコマンドを再度差替えることにならないように）
+        tmp = tmp.Replace("\nBackTemp:", "\nBack:").Replace("\nCharaTemp:", "\nChara:").Replace("\nItemTemp:", "\nItem:").Replace("\nBattleTemp:", "\nBattle:").Replace("\nBGMTemp:", "\nBGM:").Replace("\nSETemp:", "\nSE:");//コマンドの名前を戻す（一度変換してるのは番号差替え後のコマンドを再度差替えることにならないように）
         tmp = tmp.Substring(1);
 
         List<string> tmpList = new List<string>();
         tmpList.AddRange(tmp.Split('\n'));
-        strList.InsertRange(selectNum+1, tmpList);
+        strList.InsertRange(selectNum + 1, tmpList);
 
         if (strList.Count > 90) //undoList(strList)の段階では最後に空白行があるので90はセーフ。
         {
@@ -312,7 +312,7 @@ void Update()
                 else { NextSkipMake(0, i); }
             }
         }
-        for (int i = 0; i < commandData.Count; i++) { str = str + commandData[i].Replace("\r","").Replace("\n","") + "\r\n"; }
+        for (int i = 0; i < commandData.Count; i++) { str = str + commandData[i].Replace("\r", "").Replace("\n", "") + "\r\n"; }
         undoList.Add(str);
         undoListNum = undoList.Count - 1;
         selectNum = -1;
@@ -341,7 +341,7 @@ void Update()
             // 読み込んだ目次テキストファイルからstring配列を作成する
             commandData.AddRange(str.Split('\n'));
             commandData.RemoveAt(commandData.Count - 1);//最後の行は空白なので消す
-                                    //コマンドをボタンとして一覧に放り込む。
+                                                        //コマンドをボタンとして一覧に放り込む。
             for (int i = 0; i < commandData.Count; i++)
             {
                 if (i < 90)//90以降は全部タイトル戻しで埋めるのでボタン表示しない
@@ -375,7 +375,7 @@ void Update()
 
     public void NameChangeButton()
     {
-        GameObject.Find("CNameField").GetComponent<RectTransform>().localPosition = new Vector2(0,50);
+        GameObject.Find("CNameField").GetComponent<RectTransform>().localPosition = new Vector2(0, 50);
         GameObject.Find("CNameField").GetComponent<InputField>().text = commandName.Replace(objBGM.GetComponent<BGMManager>().chapterName, "").Replace("[system]", "");
         GameObject.Find("INameField").GetComponent<InputField>().text = objBGM.GetComponent<BGMManager>().chapterName.Substring(0, objBGM.GetComponent<BGMManager>().chapterName.Length - 4).Replace("[system]", "");
         GameObject.Find("InputZone").GetComponent<RectTransform>().localPosition = new Vector2(0, -500);
@@ -436,7 +436,7 @@ void Update()
                 GameObject.Find("Error").GetComponent<Text>().text = "他のファイルと名前が重複しています。上書きしますか？";
                 GameObject.Find("ErrorButton").GetComponent<RectTransform>().localPosition = new Vector2(0, -70);
                 errorFlag = 0;
-                while (errorFlag==0) { yield return null; }
+                while (errorFlag == 0) { yield return null; }
                 if (errorFlag == 1) { GameObject.Find("Error").GetComponent<Text>().text = ""; GameObject.Find("ErrorButton").GetComponent<RectTransform>().localPosition = new Vector2(0, -470); break; }//OKならそのまま処理
                 if (errorFlag == -1)
                 {
@@ -521,8 +521,8 @@ void Update()
         string[] separate;
         BackTextDraw(" ");
         TextDraw(" ", " ");
-        for (int i=1;i<6;i++) { CharacterDraw(-1, i); }
-        try { BackDraw(backGraphLog[backGraphLog.Count - 1][0]); backGraphLogTemp[0] = backGraphLog[backGraphLog.Count - 1][0];} catch { }
+        for (int i = 1; i < 6; i++) { CharacterDraw(-1, i); }
+        try { BackDraw(backGraphLog[backGraphLog.Count - 1][0]); backGraphLogTemp[0] = backGraphLog[backGraphLog.Count - 1][0]; } catch { }
         try { for (int i = 1; i <= 5; i++) { CharacterDraw(backGraphLog[backGraphLog.Count - 1][i], i); backGraphLogTemp[i] = backGraphLog[backGraphLog.Count - 1][i]; } } catch { }
         try { if (backBTLog[backBTLog.Count - 1] != "") { BackTextDraw(backBTLog[backBTLog.Count - 1]); backBTLogTemp = backBTLog[backBTLog.Count - 1]; } } catch { }
         try { if (backTLog[backTLog.Count - 1][0] != "" || backTLog[backTLog.Count - 1][1] != "") { TextDraw(backTLog[backTLog.Count - 1][0], backTLog[backTLog.Count - 1][1]); backTLogTemp = backTLog[backTLog.Count - 1]; } } catch { }
@@ -530,10 +530,10 @@ void Update()
         for (int i = 0; i <= selectNum; i++)
         {
             objBackText.gameObject.SetActive(false);
-            separate = commandData[i].Split(','); 
-            if (separate[0].Length > 5 && separate[0].Substring(0, 5) == "Text:") { TextDraw(separate[0].Substring(5), separate[1].Replace("\r","").Replace("\n",""));backTLogTemp[0] = separate[0].Substring(5);backTLogTemp[1] = separate[1].Replace("\r", "").Replace("\n", ""); backBTLogTemp= ""; }
-            if (separate[0].Length > 9 && separate[0].Substring(0, 9) == "BackText:") { BackTextDraw(separate[0].Substring(9).Replace("\r", "").Replace("\n", ""));backBTLogTemp = separate[0].Substring(9).Replace("\r", "").Replace("\n", "");backTLogTemp[0] = ""; backTLogTemp[1] = ""; }
-            if (separate[0].Length > 6 && separate[0].Substring(0, 6) == "Chara:") { CharacterDraw(int.Parse(separate[0].Substring(6)),int.Parse(separate[1].Replace("\r", "").Replace("\n", ""))); backGraphLogTemp[int.Parse(separate[1])] = int.Parse(separate[0].Substring(6)); }
+            separate = commandData[i].Split(',');
+            if (separate[0].Length > 5 && separate[0].Substring(0, 5) == "Text:") { TextDraw(separate[0].Substring(5), separate[1].Replace("\r", "").Replace("\n", "")); backTLogTemp[0] = separate[0].Substring(5); backTLogTemp[1] = separate[1].Replace("\r", "").Replace("\n", ""); backBTLogTemp = ""; }
+            if (separate[0].Length > 9 && separate[0].Substring(0, 9) == "BackText:") { BackTextDraw(separate[0].Substring(9).Replace("\r", "").Replace("\n", "")); backBTLogTemp = separate[0].Substring(9).Replace("\r", "").Replace("\n", ""); backTLogTemp[0] = ""; backTLogTemp[1] = ""; }
+            if (separate[0].Length > 6 && separate[0].Substring(0, 6) == "Chara:") { CharacterDraw(int.Parse(separate[0].Substring(6)), int.Parse(separate[1].Replace("\r", "").Replace("\n", ""))); backGraphLogTemp[int.Parse(separate[1])] = int.Parse(separate[0].Substring(6)); }
             if (separate[0].Length > 5 && separate[0].Substring(0, 5) == "Back:") { BackDraw(int.Parse(separate[0].Substring(5).Replace("\r", "").Replace("\n", ""))); backGraphLogTemp[0] = int.Parse(separate[0].Substring(5).Replace("\r", "").Replace("\n", "")); }
             if (separate[0].Length > 7 && separate[0].Substring(0, 7) == "Battle:") { for (int j = 1; j <= 5; j++) { CharacterDraw(-1, j); backGraphLogTemp[j] = -1; } }
         }
@@ -576,7 +576,7 @@ void Update()
 
                     // 読み込んだ目次テキストファイルからstring配列を作成する
                     texts.AddRange(text.Replace("\r", "").Split('\n'));
-                    commandFileNum= int.Parse(texts[0]);
+                    commandFileNum = int.Parse(texts[0]);
                     //閉じる
                     sr.Close();
                     reader.Close();
@@ -650,16 +650,16 @@ void Update()
         {
             GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = "";
         }
-        if (num == 2 || num==6 || num==7 || num==12)
+        if (num == 2 || num == 6 || num == 7 || num == 12)
         {
-            for (int i = 0; i < scenarioGraphic.Length-1; i++)
+            for (int i = 0; i < scenarioGraphic.Length - 1; i++)
             {
                 if (scenarioGraphic[i] == null) { continue; }
                 objGS.Insert(objGS.Count, Instantiate(objGraSou) as GameObject);
                 objGS[objGS.Count - 1].transform.SetParent(parentGS.transform, false);
-                objGS[objGS.Count-1].name ="GS" + i.ToString();
+                objGS[objGS.Count - 1].name = "GS" + i.ToString();
                 objGS[objGS.Count - 1].GetComponent<GSButton>().buttonNum = i;
-                objGS[objGS.Count - 1].GetComponent<Image>().sprite= scenarioGraphic[i];
+                objGS[objGS.Count - 1].GetComponent<Image>().sprite = scenarioGraphic[i];
                 objGS[objGS.Count - 1].GetComponentInChildren<Text>().text = Path.GetFileName(gFileName[i]);
             }
             if (num == 6)
@@ -675,14 +675,14 @@ void Update()
                 objGS[objGS.Count - 1].transform.SetParent(parentGS.transform, false);
                 objGS[objGS.Count - 1].name = "GS-1";
                 objGS[objGS.Count - 1].GetComponent<Image>().sprite = batten;
-                objGS[objGS.Count - 1].GetComponent<GSButton>().buttonNum = - 1;
+                objGS[objGS.Count - 1].GetComponent<GSButton>().buttonNum = -1;
                 objGS[objGS.Count - 1].GetComponentInChildren<Text>().text = "＜出ている立ち絵を消す＞";
 
 
 
             }//キャラ選択の場合、表示しないを選択したいことがある。それを×マークでフォロー。自キャラを表示する場合も同様に。
         }
-        if (num == 3 || num==5)
+        if (num == 3 || num == 5)
         {
             for (int i = 0; i < scenarioAudio.Length; i++)
             {
@@ -703,12 +703,12 @@ void Update()
         catch { }
     }
 
-    public void NextSkipMake(int kindNum,int objCBNum)
+    public void NextSkipMake(int kindNum, int objCBNum)
     {
         string[] strs;
-        string str="";
+        string str = "";
         char[] chars = { ':', ',' };
-        if (kindNum == 10) { strs=commandData[objCBNum].Replace("\r","").Replace("\n","").Split(chars);if (strs[1]!="") { str = "１→　　\r\n"; }if (strs[2] != "") {str = "１→　　\r\n２→　　\r\n"; } if (strs[3] != "") { str = "１→　　\r\n２→　　\r\n３→　　\r\n"; } if (strs[4] != "") { str = "１→　　\r\n２→　　\r\n３→　　\r\n４→　　\r\n"; } objCB[objCBNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓　　<color=white>" + (objCBNum + 1).ToString() + "</color>\r\n" + str; }
+        if (kindNum == 10) { strs = commandData[objCBNum].Replace("\r", "").Replace("\n", "").Split(chars); if (strs[1] != "") { str = "１→　　\r\n"; } if (strs[2] != "") { str = "１→　　\r\n２→　　\r\n"; } if (strs[3] != "") { str = "１→　　\r\n２→　　\r\n３→　　\r\n"; } if (strs[4] != "") { str = "１→　　\r\n２→　　\r\n３→　　\r\n４→　　\r\n"; } objCB[objCBNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓　　<color=white>" + (objCBNum + 1).ToString() + "</color>\r\n" + str; }
         else if (kindNum == 11) { objCB[objCBNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓　　<color=white>" + (objCBNum + 1).ToString() + "</color>\r\nSP→　　\r\n成功→　　\r\n失敗→　　"; }
         else if (kindNum == 12) { objCB[objCBNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓　　<color=white>" + (objCBNum + 1).ToString() + "</color>\r\n技能→　\r\n勝(殺)→　\r\n勝(両)→　\r\n勝(生)→　\r\n負(生)→　\r\n負(死)→　"; }
         else if (kindNum == 13) { objCB[objCBNum].transform.Find("NextSkip").GetComponent<Text>().text = "↓　　<color=white>" + (objCBNum + 1).ToString() + "</color>\r\nOn→　　\r\nOff→　　"; }
@@ -724,41 +724,45 @@ void Update()
     public void CommandDecide(int num)
     {
         string str2;
-        string commandText="";
+        string commandText = "";
         System.Text.RegularExpressions.Regex r =
     new System.Text.RegularExpressions.Regex(
         "[\\x00-\\x1f<>:\"/\\\\|?*,]" +
         "|^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9]|CLOCK\\$)(\\.|$)" +
         "|[\\. ]$",
     System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        if (num == 0) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "　"; } if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "　"; } commandText = "Text:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text.Replace(",","，").Replace(":", "：").Replace(" ", " ") + "," + GameObject.Find("InputFieldText").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "：").Replace(" ", " "); if (GameObject.Find("Toggle").GetComponent<Toggle>().isOn == false) { commandText = commandText + ",false"; } else { commandText = commandText + ",true"; } }
-        if (num == 1) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "　"; } commandText = "BackText:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "：").Replace(" ", " "); if (GameObject.Find("Toggle").GetComponent<Toggle>().isOn == false) { commandText = commandText + ",false"; } else { commandText = commandText + ",true"; } }
+        if (num == 0) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "　"; } if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "　"; } commandText = "Text:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "：").Replace(" ", " ") + "," + GameObject.Find("InputFieldText").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "：").Replace(" ", " "); if (GameObject.Find("Toggle").GetComponent<Toggle>().isOn == false) { commandText = commandText + ",false"; } else { commandText = commandText + ",true"; } }
+        if (num == 1) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "　"; } commandText = "BackText:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "：").Replace(" ", " "); if (GameObject.Find("Toggle").GetComponent<Toggle>().isOn == false) { commandText = commandText + ",false"; } else { commandText = commandText + ",true"; } }
         if (num == 2) { if (selectGS == -1) { GameObject.Find("Error").GetComponent<Text>().text = "画像を選択してください。"; StartCoroutine(ErrorWait()); return; } commandText = "Back:" + selectGS.ToString(); }
-        if (num == 3) { if (selectGS == -1) { GameObject.Find("Error").GetComponent<Text>().text = "ファイルを選択してください。"; StartCoroutine(ErrorWait()); return; } if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "0"; } commandText = "BGM:" + selectGS.ToString() + "," + GameObject.Find("InputFieldName").GetComponent<InputField>().text;}
+        if (num == 3) { if (selectGS == -1) { GameObject.Find("Error").GetComponent<Text>().text = "ファイルを選択してください。"; StartCoroutine(ErrorWait()); return; } if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "0"; } commandText = "BGM:" + selectGS.ToString() + "," + GameObject.Find("InputFieldName").GetComponent<InputField>().text; }
         if (num == 4) { if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "0"; } commandText = "BGMStop:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text; }
         if (num == 5) { if (selectGS == -1) { GameObject.Find("Error").GetComponent<Text>().text = "ファイルを選択してください。"; StartCoroutine(ErrorWait()); return; } commandText = "SE:" + selectGS.ToString(); }
-        if (num == 6) { string str=""; if(GameObject.Find("Slider2").GetComponent<Slider>().value==1){ str = "L"; } if (GameObject.Find("Slider2").GetComponent<Slider>().value == 2) { str = "N"; } if (GameObject.Find("Slider2").GetComponent<Slider>().value == 3) { str = "R"; } commandText = "Chara:" + selectGS.ToString() + "," + ((int)(GameObject.Find("Slider").GetComponent<Slider>().value)).ToString() + "," + str; }
+        if (num == 6) { string str = ""; if (GameObject.Find("Slider2").GetComponent<Slider>().value == 1) { str = "L"; } if (GameObject.Find("Slider2").GetComponent<Slider>().value == 2) { str = "N"; } if (GameObject.Find("Slider2").GetComponent<Slider>().value == 3) { str = "R"; } commandText = "Chara:" + selectGS.ToString() + "," + ((int)(GameObject.Find("Slider").GetComponent<Slider>().value)).ToString() + "," + str; }
         if (num == 7) { if (selectGS == -1) { GameObject.Find("Error").GetComponent<Text>().text = "画像を選択してください。"; StartCoroutine(ErrorWait()); return; } commandText = "Item:" + selectGS.ToString(); }
         if (num == 8) { commandText = "Shake:"; }
         if (num == 9) { commandText = "Jump:" + ((int)(GameObject.Find("Slider").GetComponent<Slider>().value)).ToString(); }
         if (num == 10) { commandText = "Select:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "：") + "," + GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "：") + "," + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "：") + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "："); }
         if (num == 11)
         {
-            string tmp="";
+            string tmp = "";
             string tmp2 = "";
             if (GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text != "" && GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text != "") { GameObject.Find("Error").GetComponent<Text>().text = "割算か掛算のどちらか一つだけを入力してください。"; StartCoroutine(ErrorWait()); return; }
-            if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text!="") { tmp = "*" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text; }
+            if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text != "") { tmp = "*" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text; }
             if (GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text != "") { tmp = "/" + GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text; }
-            if (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text== "") { GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = "0"; }
+            if (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = "0"; }
             if (GameObject.Find("Label1").GetComponent<Text>().text != "フラグの値で判定する") { tmp2 = GameObject.Find("Label1").GetComponent<Text>().text; } else { tmp2 = GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text; }
-            commandText ="Hantei:" + tmp2 + tmp + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text;
+            commandText = "Hantei:" + tmp2 + tmp + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text;
         }
-        if (num == 12) { for (int i = 2; i < 5; i++) { if (GameObject.Find("InputFieldText (" + i.ToString() + ")").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (" + i.ToString() + ")").GetComponent<InputField>().text = "0"; } }
-             if (GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text = "逃走"; }
-            if (GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text = "0";  }
+        if (num == 12)
+        {
+            for (int i = 2; i < 5; i++) { if (GameObject.Find("InputFieldText (" + i.ToString() + ")").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (" + i.ToString() + ")").GetComponent<InputField>().text = "0"; } }
+            if (GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text = "逃走"; }
+            if (GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text = "0"; }
             if (GameObject.Find("InputFieldText (8)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (8)").GetComponent<InputField>().text = "-1"; }
-            if (selectGS == -1) { GameObject.Find("Error").GetComponent<Text>().text = "画像を選択してください。"; StartCoroutine(ErrorWait()); return; } commandText = "Battle:" + selectGS.ToString() + "," + GameObject.Find("Label1").GetComponent<Text>().text + "," + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text + "," + GameObject.Find("Label2").GetComponent<Text>().text + "," + GameObject.Find("Label3").GetComponent<Text>().text.Replace("D","") + "," + (GameObject.Find("Toggle1").GetComponent<Toggle>().isOn).ToString().ToLower() + "," + GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text + "," + GameObject.Find("Label4").GetComponent<Text>().text + "," + GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (8)").GetComponent<InputField>().text + "," + (GameObject.Find("Toggle2").GetComponent<Toggle>().isOn).ToString().ToLower(); }
-        if (num == 13) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { GameObject.Find("Error").GetComponent<Text>().text = "必要項目が入力されていません。"; StartCoroutine(ErrorWait()); return; } if (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text ="1" ; } commandText ="FlagBranch:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "：") + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
+            if (selectGS == -1) { GameObject.Find("Error").GetComponent<Text>().text = "画像を選択してください。"; StartCoroutine(ErrorWait()); return; }
+            commandText = "Battle:" + selectGS.ToString() + "," + GameObject.Find("Label1").GetComponent<Text>().text + "," + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text + "," + GameObject.Find("Label2").GetComponent<Text>().text + "," + GameObject.Find("Label3").GetComponent<Text>().text.Replace("D", "") + "," + (GameObject.Find("Toggle1").GetComponent<Toggle>().isOn).ToString().ToLower() + "," + GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text + "," + GameObject.Find("Label4").GetComponent<Text>().text + "," + GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (8)").GetComponent<InputField>().text + "," + (GameObject.Find("Toggle2").GetComponent<Toggle>().isOn).ToString().ToLower();
+        }
+        if (num == 13) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { GameObject.Find("Error").GetComponent<Text>().text = "必要項目が入力されていません。"; StartCoroutine(ErrorWait()); return; } if (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = "1"; } commandText = "FlagBranch:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "：") + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
         if (num == 14)
         {
             if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "" || (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "" && GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text == "")) { GameObject.Find("Error").GetComponent<Text>().text = "必要項目が入力されていません。"; StartCoroutine(ErrorWait()); return; }
@@ -768,7 +772,7 @@ void Update()
         if (num == 15) { commandText = "GetTime:"; }
         if (num == 16) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "" || GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("Error").GetComponent<Text>().text = "必要項目が入力されていません。"; StartCoroutine(ErrorWait()); return; } commandText = "FlagCopy:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "：") + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "："); }
         if (num == 17) { commandText = "Difference:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text; }
-        if (num == 18) { if (GameObject.Find("Label2").GetComponent<Text>().text != " " && GameObject.Find("Label3").GetComponent<Text>().text != " ") { commandText = "StatusChange:" + GameObject.Find("Label1").GetComponent<Text>().text + "," + GameObject.Find("Label2").GetComponent<Text>().text + GameObject.Find("Label3").GetComponent<Text>().text + "+" + GameObject.Find("InputFieldText").GetComponent<InputField>().text; } else { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text != "") { commandText = "StatusChange:" + GameObject.Find("Label1").GetComponent<Text>().text + ",+" + GameObject.Find("InputFieldText").GetComponent<InputField>().text; } else { commandText = "StatusChange:" + GameObject.Find("Label1").GetComponent<Text>().text + ",+0"; } }}
+        if (num == 18) { if (GameObject.Find("Label2").GetComponent<Text>().text != " " && GameObject.Find("Label3").GetComponent<Text>().text != " ") { commandText = "StatusChange:" + GameObject.Find("Label1").GetComponent<Text>().text + "," + GameObject.Find("Label2").GetComponent<Text>().text + GameObject.Find("Label3").GetComponent<Text>().text + "+" + GameObject.Find("InputFieldText").GetComponent<InputField>().text; } else { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text != "") { commandText = "StatusChange:" + GameObject.Find("Label1").GetComponent<Text>().text + ",+" + GameObject.Find("InputFieldText").GetComponent<InputField>().text; } else { commandText = "StatusChange:" + GameObject.Find("Label1").GetComponent<Text>().text + ",+0"; } } }
         if (num == 19) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { GameObject.Find("Error").GetComponent<Text>().text = "必要項目が入力されていません。"; StartCoroutine(ErrorWait()); return; } commandText = "Input:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "："); }
         if (num == 20) { if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "" || GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("Error").GetComponent<Text>().text = "必要項目が入力されていません。"; StartCoroutine(ErrorWait()); return; } commandText = "Equal:" + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "：") + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text.Replace(",", "，").Replace(":", "："); }
         if (num == 21) { commandText = "Lost:"; }
@@ -776,10 +780,10 @@ void Update()
         if (num == 23) { if (GameObject.Find("Toggle1").GetComponent<Toggle>().isOn) { commandText = "Map:Everytime"; } else { commandText = "Map:Once"; } }
         if (num == 24)
         {
-            if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") {commandFileNum++;SaveCommandFileNum(); commandText = "NextFile:" + "[system]NoName" + commandFileNum.ToString() + objBGM.GetComponent<BGMManager>().chapterName; }
+            if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { commandFileNum++; SaveCommandFileNum(); commandText = "NextFile:" + "[system]NoName" + commandFileNum.ToString() + objBGM.GetComponent<BGMManager>().chapterName; }
             else
             {
-                if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text.Contains("[system]")) {GameObject.Find("Error").GetComponent<Text>().text = "「<color=red>[system]</color>」という文字列は使用禁止です。(システム処理の識別語にしています)";StartCoroutine(ErrorWait());return; }
+                if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text.Contains("[system]")) { GameObject.Find("Error").GetComponent<Text>().text = "「<color=red>[system]</color>」という文字列は使用禁止です。(システム処理の識別語にしています)"; StartCoroutine(ErrorWait()); return; }
                 else
                 {
                     if (r.IsMatch(GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text)) { GameObject.Find("Error").GetComponent<Text>().text = "ファイル名に使えない文字、または,(半角コンマ)が入っています。"; StartCoroutine(ErrorWait()); return; }
@@ -790,19 +794,26 @@ void Update()
                 }
             }
         }
-        if (num == 25) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "" ){ GameObject.Find("InputFieldText").GetComponent<InputField>().text = "0"; }
+        if (num == 25)
+        {
+            if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "0"; }
             if (GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = "0"; }
             if (GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = "0"; }
             if (GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = "3"; }
-            commandText = "BlackOut:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text; }
+            commandText = "BlackOut:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text;
+        }
         if (num == 26) { if (GameObject.Find("InputFieldText").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText").GetComponent<InputField>().text = "0"; } if (GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = "0"; } commandText = "PlaceChange:" + GameObject.Find("InputFieldText").GetComponent<InputField>().text + "," + GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text; }
         if (num == 27) { if (GameObject.Find("InputFieldName").GetComponent<InputField>().text == "") { GameObject.Find("InputFieldName").GetComponent<InputField>().text = "0"; } commandText = "Wait:" + GameObject.Find("InputFieldName").GetComponent<InputField>().text; }
         if (num == 28)
         {
             string tmpstr1;
             string tmpstr2;
-            if (GameObject.Find("Label0").GetComponent<Text>().text != " " && GameObject.Find("Label1").GetComponent<Text>().text != " ") { tmpstr1 = "SANCheck:" + GameObject.Find("Label0").GetComponent<Text>().text + GameObject.Find("Label1").GetComponent<Text>().text + "+" + GameObject.Find("InputFieldText").GetComponent<InputField>().text;
-            } else {
+            if (GameObject.Find("Label0").GetComponent<Text>().text != " " && GameObject.Find("Label1").GetComponent<Text>().text != " ")
+            {
+                tmpstr1 = "SANCheck:" + GameObject.Find("Label0").GetComponent<Text>().text + GameObject.Find("Label1").GetComponent<Text>().text + "+" + GameObject.Find("InputFieldText").GetComponent<InputField>().text;
+            }
+            else
+            {
                 if (GameObject.Find("InputFieldText").GetComponent<InputField>().text != "") { tmpstr1 = "SANCheck:+" + GameObject.Find("InputFieldText").GetComponent<InputField>().text; } else { tmpstr1 = "SANCheck:+0"; }
             }
             if (GameObject.Find("Label2").GetComponent<Text>().text != " " && GameObject.Find("Label3").GetComponent<Text>().text != " ")
@@ -824,10 +835,10 @@ void Update()
             SceneGraphic();
             NextSkipMake(num, selectNum);
 
-            str2= "";
+            str2 = "";
             for (int i = 0; i < commandData.Count; i++) { if (commandData[i].Replace("\n", "").Replace("\r", "") == "") { str2 = str2 + "Title:(未設定コマンド。タイトルバックとして機能します)\r\n"; continue; } str2 = str2 + commandData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
             undoList.Add(str2);
-            undoListNum=undoList.Count-1;
+            undoListNum = undoList.Count - 1;
         }
         else
         {
@@ -839,18 +850,25 @@ void Update()
 
     private void StartScene()
     {
-        graphicNum = 0;soundNum = 0;
+        graphicNum = 0; soundNum = 0;
         List<string> tmp = LoadIventData(objBGM.GetComponent<BGMManager>().chapterName);
         for (int i = 0; i < tmp.Count; i++)
         {
             ZipRead(tmp[i]);//zipにあるイベントに関連するpngやwavを読み込む。
         }
-        string[] files = Directory.GetFiles(@GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ", "*", SearchOption.AllDirectories);
-        for (int i = 0; i < scenarioGraphic.Length - 1; i++) { if (gFileName[i] != "" && gFileName != null) { graphicNum = i; } }
-        for (int i = 0; i < scenarioAudio.Length; i++) { if (sFileName[i] != "" && sFileName != null) { soundNum = i; } }
-        for (int i = 0; i < files.Length; i++)
+        try
         {
-            StartCoroutine(LoadFile(files[i]));//素材フォルダのファイルを読み込む。
+            string[] files = Directory.GetFiles(@GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ", "*", SearchOption.AllDirectories);
+            for (int i = 0; i < scenarioGraphic.Length - 1; i++) { if (gFileName[i] != "" && gFileName != null) { graphicNum = i; } }
+            for (int i = 0; i < scenarioAudio.Length; i++) { if (sFileName[i] != "" && sFileName != null) { soundNum = i; } }
+            for (int i = 0; i < files.Length; i++)
+            {
+                StartCoroutine(LoadFile(files[i]));//素材フォルダのファイルを読み込む。
+            }
+        }
+        catch
+        {
+            GameObject.Find("Error").GetComponent<Text>().text = "『シナリオに使うpngやwavを入れるフォルダ』がありません。";
         }
         LoadCommandData("[system]command1" + objBGM.GetComponent<BGMManager>().chapterName);
     }
@@ -972,7 +990,7 @@ void Update()
                     string text = sr.ReadToEnd();
 
                     // 読み込んだ目次テキストファイルからstring配列を作成する
-                    texts.AddRange(text.Replace("\r","").Split('\n'));
+                    texts.AddRange(text.Replace("\r", "").Split('\n'));
                     //閉じる
                     sr.Close();
                     reader.Close();
@@ -1006,7 +1024,7 @@ void Update()
 
     private IEnumerator LoadFile(string path)
     {
-        path = path.Replace("\n", "").Replace("\r","");
+        path = path.Replace("\n", "").Replace("\r", "");
         // 指定したファイルをロードする
         WWW request = new WWW(path);
 
@@ -1031,12 +1049,13 @@ void Update()
         {
             // 画像を取り出す
             Texture2D texture = request.texture;
-            
+
             //同名ファイルが既にzipに入っていれば上書き
-            if(Array.IndexOf(gFileName, Path.GetFileName(path)) >= 0){ scenarioGraphic[Array.IndexOf(gFileName, Path.GetFileName(path))] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f)); gFileName[Array.IndexOf(gFileName, Path.GetFileName(path))] = path;yield break; }
+            if (Array.IndexOf(gFileName, Path.GetFileName(path)) >= 0) { scenarioGraphic[Array.IndexOf(gFileName, Path.GetFileName(path))] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f)); gFileName[Array.IndexOf(gFileName, Path.GetFileName(path))] = path; yield break; }
 
             //空要素があればそこに代入。
-            for (int j=0;j<scenarioGraphic.Length-1;j++) {
+            for (int j = 0; j < scenarioGraphic.Length - 1; j++)
+            {
                 if (scenarioGraphic[j] == null)
                 {
                     scenarioGraphic[j] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f)); gFileName[j] = path; yield break;
@@ -1044,9 +1063,9 @@ void Update()
             }
 
             //どちらでもなければ追加
-            if (graphicNum<scenarioGraphic.Length-1)
+            if (graphicNum < scenarioGraphic.Length - 1)
             {
-                gFileName[graphicNum]=path;
+                gFileName[graphicNum] = path;
                 scenarioGraphic[graphicNum] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
                 graphicNum++;
             }
@@ -1055,16 +1074,16 @@ void Update()
         //wavファイルの場合
         if (path.Substring(path.Length - 4) == ".wav")
         {
-            yield return StartCoroutine(LoadBGM(request,path));
+            yield return StartCoroutine(LoadBGM(request, path));
         }
         yield return null;
     }
 
-    private IEnumerator LoadBGM(WWW request,string path)
+    private IEnumerator LoadBGM(WWW request, string path)
     {
         //同名ファイルが既にzipに入っていれば上書き
 
-        if (Array.IndexOf(sFileName, Path.GetFileName(path))>=0)
+        if (Array.IndexOf(sFileName, Path.GetFileName(path)) >= 0)
         {
             scenarioAudio[Array.IndexOf(sFileName, Path.GetFileName(path))] = request.GetAudioClip(false, true);
             while (scenarioAudio[Array.IndexOf(sFileName, Path.GetFileName(path))].loadState == AudioDataLoadState.Loading)
@@ -1108,7 +1127,7 @@ void Update()
         //どちらでもなければ追加
         if (soundNum < scenarioAudio.Length)
         {
-            sFileName[soundNum]=path;
+            sFileName[soundNum] = path;
             scenarioAudio[soundNum] = request.GetAudioClip(false, true);
             soundNum++;
             while (scenarioAudio[soundNum].loadState == AudioDataLoadState.Loading)
@@ -1174,7 +1193,7 @@ void Update()
                         {
                             objCB.Add(Instantiate(objCommand) as GameObject);
                             objCB[i].transform.SetParent(parentObject.transform, false);
-                            objCB[i].transform.Find("Text").GetComponent<Text>().text = commandData[i].Replace("</size>","");
+                            objCB[i].transform.Find("Text").GetComponent<Text>().text = commandData[i].Replace("</size>", "");
                             objCB[i].GetComponent<CommandButton>().buttonNum = i;
 
                             //分岐コマンドの場合は分岐先表示を出す
@@ -1185,7 +1204,7 @@ void Update()
                             else if (commandData[i].Length > 11 && commandData[i].Substring(0, 11) == "Difference:") { NextSkipMake(17, i); }
                             else if (commandData[i].Length > 6 && commandData[i].Substring(0, 6) == "Equal:") { NextSkipMake(20, i); }
                             else if (commandData[i].Length > 9 && commandData[i].Substring(0, 9) == "SANCheck:") { NextSkipMake(28, i); }
-                            else { NextSkipMake(0,i); }
+                            else { NextSkipMake(0, i); }
                         }
                     }
                 }
@@ -1216,15 +1235,15 @@ void Update()
     {
         string str;
         //追加ボタンが押されたらコマンドボタンを追加する。
-        if (objCB.Count < 90-1)//90コまで
+        if (objCB.Count < 90 - 1)//90コまで
         {
-                objCB.Insert(selectNum+1, Instantiate(objCommand) as GameObject);
-                commandData.Insert(selectNum+1, "");
-                objCB[selectNum+1].transform.SetParent(parentObject.transform, false);
-                objCB[selectNum+1].GetComponent<CommandButton>().buttonNum = selectNum+1;
-                objCB[selectNum+1].GetComponent<Transform>().SetSiblingIndex(selectNum+1);
-            NextSkipMake(0,selectNum+1);
-                for (int i = selectNum + 2; i < objCB.Count; i++)
+            objCB.Insert(selectNum + 1, Instantiate(objCommand) as GameObject);
+            commandData.Insert(selectNum + 1, "");
+            objCB[selectNum + 1].transform.SetParent(parentObject.transform, false);
+            objCB[selectNum + 1].GetComponent<CommandButton>().buttonNum = selectNum + 1;
+            objCB[selectNum + 1].GetComponent<Transform>().SetSiblingIndex(selectNum + 1);
+            NextSkipMake(0, selectNum + 1);
+            for (int i = selectNum + 2; i < objCB.Count; i++)
             {
                 objCB[i].GetComponent<CommandButton>().buttonNum++;
 
@@ -1246,7 +1265,7 @@ void Update()
         else
         {
             AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();
-            GameObject.Find("Error").GetComponent<Text>().text = "コマンド数オーバーです。次ファイルに移ってください。"; 
+            GameObject.Find("Error").GetComponent<Text>().text = "コマンド数オーバーです。次ファイルに移ってください。";
             StartCoroutine(ErrorWait());
         }
     }
@@ -1285,7 +1304,7 @@ void Update()
                 Destroy(objCB[multiSelect[j]]);
                 objCB.RemoveAt(multiSelect[j]);
                 try { commandData.RemoveAt(multiSelect[j]); } catch { }
-                for (int i = selectNum; i < objCB.Count; i++)
+                for (int i = multiSelect[j]; i < objCB.Count; i++)
                 {
                     objCB[i].GetComponent<CommandButton>().buttonNum--;
 
@@ -1334,7 +1353,7 @@ void Update()
             if (strs[0] == "Shake") { if (objMake[8].activeSelf == false) { CommandButton(8); } }
             if (strs[0] == "Jump") { if (objMake[9].activeSelf == false) { CommandButton(9); } GameObject.Find("Slider").GetComponent<Slider>().value = int.Parse(strs[1]); }
             if (strs[0] == "Select") { if (objMake[10].activeSelf == false) { CommandButton(10); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = strs[2]; GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[3]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[4]; }
-            if (strs[0] == "Hantei") { if (objMake[11].activeSelf == false) { CommandButton(11); } string[] tmpstr = strs[1].Split(new char[] { '/', '*' }); GameObject.Find("Dropdown1").GetComponent<Dropdown>().value = SkillList2(tmpstr[0]);if (GameObject.Find("Dropdown1").GetComponent<Dropdown>().value == 70) { GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text = tmpstr[0]; } else { GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text = ""; } if (strs[1].Contains("*")) { GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = tmpstr[1]; } if (strs[1].Contains("/")) { GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text = tmpstr[1]; } GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; }
+            if (strs[0] == "Hantei") { if (objMake[11].activeSelf == false) { CommandButton(11); } string[] tmpstr = strs[1].Split(new char[] { '/', '*' }); GameObject.Find("Dropdown1").GetComponent<Dropdown>().value = SkillList2(tmpstr[0]); if (GameObject.Find("Dropdown1").GetComponent<Dropdown>().value == 70) { GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text = tmpstr[0]; } else { GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text = ""; } if (strs[1].Contains("*")) { GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = tmpstr[1]; } if (strs[1].Contains("/")) { GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text = tmpstr[1]; } GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; }
             if (strs[0] == "Battle") { if (objMake[12].activeSelf == false) { CommandButton(12); } selectGS = int.Parse(strs[1]); try { objGSB = GameObject.Find("GS" + selectGS.ToString()); objGSB.GetComponent<Image>().color = new Color(1.0f, 1.0f, 0); } catch { } GameObject.Find("Dropdown1").GetComponent<Dropdown>().value = int.Parse(strs[2]) - 1; GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[3]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[4]; GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text = strs[5]; GameObject.Find("Dropdown2").GetComponent<Dropdown>().value = int.Parse(strs[6]) - 1; int k = 0; if (strs[7] == "4") { k = 0; } if (strs[7] == "6") { k = 1; } if (strs[7] == "10") { k = 2; } if (strs[7] == "100") { k = 3; } GameObject.Find("Dropdown3").GetComponent<Dropdown>().value = k; if (strs[8] == "true") { GameObject.Find("Toggle1").GetComponent<Toggle>().isOn = true; } else { GameObject.Find("Toggle1").GetComponent<Toggle>().isOn = false; } GameObject.Find("InputFieldText (5)").GetComponent<InputField>().text = strs[9]; GameObject.Find("Dropdown4").GetComponent<Dropdown>().value = SkillList2(strs[10]); GameObject.Find("InputFieldText (7)").GetComponent<InputField>().text = strs[11]; GameObject.Find("InputFieldText (8)").GetComponent<InputField>().text = strs[12]; if (strs[13] == "true") { GameObject.Find("Toggle2").GetComponent<Toggle>().isOn = true; } else { GameObject.Find("Toggle2").GetComponent<Toggle>().isOn = false; } }
             if (strs[0] == "FlagBranch") { if (objMake[13].activeSelf == false) { CommandButton(13); } GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; }
             if (strs[0] == "FlagChange") { if (objMake[14].activeSelf == false) { CommandButton(14); } GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; GameObject.Find("InputFieldText (4)").GetComponent<InputField>().text = strs[3]; }
@@ -1346,14 +1365,14 @@ void Update()
             if (strs[0] == "Equal") { if (objMake[20].activeSelf == false) { CommandButton(20); } GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[2]; }
             if (strs[0] == "Lost") { if (objMake[21].activeSelf == false) { CommandButton(21); } }
             if (strs[0] == "Title") { if (objMake[22].activeSelf == false) { CommandButton(22); } }
-            if (strs[0] == "Map") { if (objMake[23].activeSelf == false) { CommandButton(23); }if (strs[1]=="Once") { GameObject.Find("Toggle1").GetComponent<Toggle>().isOn = false; } else { GameObject.Find("Toggle1").GetComponent<Toggle>().isOn = true; } }
+            if (strs[0] == "Map") { if (objMake[23].activeSelf == false) { CommandButton(23); } if (strs[1] == "Once") { GameObject.Find("Toggle1").GetComponent<Toggle>().isOn = false; } else { GameObject.Find("Toggle1").GetComponent<Toggle>().isOn = true; } }
             if (strs[0] == "NextFile") { if (objMake[24].activeSelf == false) { CommandButton(24); } GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[1].Substring(8, strs[1].Length - 8 - objBGM.GetComponent<BGMManager>().chapterName.Length); }
             if (strs[0] == "BlackOut") { if (objMake[25].activeSelf == false) { CommandButton(25); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = strs[2]; GameObject.Find("InputFieldText (2)").GetComponent<InputField>().text = strs[3]; GameObject.Find("InputFieldText (3)").GetComponent<InputField>().text = strs[4]; }
             if (strs[0] == "PlaceChange") { if (objMake[26].activeSelf == false) { CommandButton(26); } GameObject.Find("InputFieldText").GetComponent<InputField>().text = strs[1]; GameObject.Find("InputFieldText (1)").GetComponent<InputField>().text = strs[2]; }
             if (strs[0] == "Wait") { if (objMake[27].activeSelf == false) { CommandButton(27); } GameObject.Find("InputFieldName").GetComponent<InputField>().text = strs[1]; }
-            if (strs[0] == "SANCheck") { if (objMake[28].activeSelf == false) { CommandButton(28); } int k = 1; if (strs[1].Contains("1D")) { k = 0; } else if (strs[1].Contains("2D")) { k = 1; } else { k = 2; } GameObject.Find("Dropdown0").GetComponent<Dropdown>().value = k; if (strs[1].Contains("D4")) { k = 0; } else if (strs[1].Contains("D6")) { k = 1; } else if (strs[1].Contains("D100")) { k = 3; } else if (strs[1].Contains("D10")) { k = 2; } else { k = 4; } GameObject.Find("Dropdown1").GetComponent<Dropdown>().value = k; if (strs[1].Contains("+")) { string[] tmpstr = strs[1].Split('+'); GameObject.Find("InputFieldText").GetComponent<InputField>().text = tmpstr[1]; } else { GameObject.Find("InputFieldText").GetComponent<InputField>().text = ""; } if (strs[2].Contains("1D")) { k = 0; } else if (strs[2].Contains("2D")) { k = 1; } else { k = 2; } GameObject.Find("Dropdown2").GetComponent<Dropdown>().value = k; if (strs[2].Contains("D4")) { k = 0; } else if (strs[2].Contains("D6")) { k = 1; } else if (strs[2].Contains("D100")) { k = 3; } else if (strs[2].Contains("D10")) { k = 2; } else { k = 4; } GameObject.Find("Dropdown3").GetComponent<Dropdown>().value = k; if (strs[2].Contains("+")) { string[] tmpstr = strs[2].Split('+'); GameObject.Find("InputFieldText2").GetComponent<InputField>().text = tmpstr[1]; } else { GameObject.Find("InputFieldText2").GetComponent<InputField>().text = ""; }}
+            if (strs[0] == "SANCheck") { if (objMake[28].activeSelf == false) { CommandButton(28); } int k = 1; if (strs[1].Contains("1D")) { k = 0; } else if (strs[1].Contains("2D")) { k = 1; } else { k = 2; } GameObject.Find("Dropdown0").GetComponent<Dropdown>().value = k; if (strs[1].Contains("D4")) { k = 0; } else if (strs[1].Contains("D6")) { k = 1; } else if (strs[1].Contains("D100")) { k = 3; } else if (strs[1].Contains("D10")) { k = 2; } else { k = 4; } GameObject.Find("Dropdown1").GetComponent<Dropdown>().value = k; if (strs[1].Contains("+")) { string[] tmpstr = strs[1].Split('+'); GameObject.Find("InputFieldText").GetComponent<InputField>().text = tmpstr[1]; } else { GameObject.Find("InputFieldText").GetComponent<InputField>().text = ""; } if (strs[2].Contains("1D")) { k = 0; } else if (strs[2].Contains("2D")) { k = 1; } else { k = 2; } GameObject.Find("Dropdown2").GetComponent<Dropdown>().value = k; if (strs[2].Contains("D4")) { k = 0; } else if (strs[2].Contains("D6")) { k = 1; } else if (strs[2].Contains("D100")) { k = 3; } else if (strs[2].Contains("D10")) { k = 2; } else { k = 4; } GameObject.Find("Dropdown3").GetComponent<Dropdown>().value = k; if (strs[2].Contains("+")) { string[] tmpstr = strs[2].Split('+'); GameObject.Find("InputFieldText2").GetComponent<InputField>().text = tmpstr[1]; } else { GameObject.Find("InputFieldText2").GetComponent<InputField>().text = ""; } }
             if (strs[0] == "FlagReset") { if (objMake[29].activeSelf == false) { CommandButton(29); } }
-            if (strs[0] == "" || strs[0]==null)
+            if (strs[0] == "" || strs[0] == null)
             {
                 for (int i = 0; i < objMake.Length; i++) { objMake[i].SetActive(false); }
                 foreach (GameObject tempObject in objGS) { Destroy(tempObject); }
@@ -1391,11 +1410,11 @@ void Update()
     public void NextFileButton()
     {
         string path;
-        int[] temp1= { backGraphLogTemp[0], backGraphLogTemp[1], backGraphLogTemp[2], backGraphLogTemp[3], backGraphLogTemp[4], backGraphLogTemp[5], };
-        string[] temp2= { backTLogTemp[0],backTLogTemp[1] };//配列や文字列をそのまま代入すると参照型なのでアドレス自体を渡してしまう（＝元データをいじるとリストまで変更されてしまう）
+        int[] temp1 = { backGraphLogTemp[0], backGraphLogTemp[1], backGraphLogTemp[2], backGraphLogTemp[3], backGraphLogTemp[4], backGraphLogTemp[5], };
+        string[] temp2 = { backTLogTemp[0], backTLogTemp[1] };//配列や文字列をそのまま代入すると参照型なのでアドレス自体を渡してしまう（＝元データをいじるとリストまで変更されてしまう）
         CommandDecide(24);//ネクストファイルの「決定」ボタンを押したのと同じ効果。
         if (GameObject.Find("Error").GetComponent<Text>().text == "「<color=red>[system]</color>」という文字列は使用禁止です。(システム処理の識別語にしています)" || GameObject.Find("Error").GetComponent<Text>().text == "ファイル名に使えない文字、または,(半角コンマ)が入っています。") { return; }
-        path = commandData[selectNum].Substring(9).Replace("\r","").Replace("\n","");
+        path = commandData[selectNum].Substring(9).Replace("\r", "").Replace("\n", "");
         SaveCommandFile();
         backFileLog.Add(commandName);//現在のコマンドファイル名をログに保存
         backBTLog.Add(backBTLogTemp);
@@ -1448,8 +1467,8 @@ void Update()
             zf.Close();
 
             //一時的に書きだしたファイルを消去する。
-                File.Delete(file);
-                File.Delete(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName);
+            File.Delete(file);
+            File.Delete(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName);
         }
         catch { }
     }
@@ -1457,14 +1476,14 @@ void Update()
     //イベントファイルを書き出す関数
     private void AddIventGS(ICSharpCode.SharpZipLib.Zip.ZipFile zf)
     {
-        bool[] gF=new bool[scenarioGraphic.Length-1];
+        bool[] gF = new bool[scenarioGraphic.Length - 1];
         bool[] sF = new bool[scenarioAudio.Length];
         //冒頭コマンドファイルを入れる。
         string str = "[system]command1" + objBGM.GetComponent<BGMManager>().chapterName + "\r\n";
         //先にテキストファイルを一時的に書き出しておく。※コマンドファイルで使われていないモノは保存しない。
         foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry ze in zf)
         {
-        if (ze.Name.Length>8 && ze.Name.Substring(0, 8) == "[system]" && ze.Name.Contains(Path.GetFileName(objBGM.GetComponent<BGMManager>().chapterName)))
+            if (ze.Name.Length > 8 && ze.Name.Substring(0, 8) == "[system]" && ze.Name.Contains(Path.GetFileName(objBGM.GetComponent<BGMManager>().chapterName)))
             {
                 //閲覧するZIPエントリのStreamを取得
                 Stream reader = zf.GetInputStream(ze);
@@ -1473,13 +1492,13 @@ void Update()
                     reader, System.Text.Encoding.GetEncoding("UTF-8"));
                 // テキストを取り出す
                 string text = sr.ReadToEnd();
-                for (int i = 0; i < scenarioGraphic.Length-1; i++)
+                for (int i = 0; i < scenarioGraphic.Length - 1; i++)
                 {
                     if (text.Contains("\nBack:" + i.ToString() + "\r\n") || text.Contains("\nBack:" + i.ToString() + "\n") || text.Contains("\nChara:" + i.ToString() + ",") || text.Contains("\nItem:" + i.ToString() + "\r\n") || text.Contains("\nItem:" + i.ToString() + "\n") || text.Contains("\nBattle:" + i.ToString() + ",")) { gF[i] = true; }
                 }
                 for (int i = 0; i < scenarioAudio.Length; i++)
                 {
-                    if (text.Contains("\nBGM:" + i.ToString() + ",") || text.Contains("\nSE:" + i.ToString() + "\r\n") || text.Contains("\nSE:" + i.ToString() + "\n")) { sF[i]=true; }
+                    if (text.Contains("\nBGM:" + i.ToString() + ",") || text.Contains("\nSE:" + i.ToString() + "\r\n") || text.Contains("\nSE:" + i.ToString() + "\n")) { sF[i] = true; }
                 }
                 //閉じる
                 sr.Close();
@@ -1487,15 +1506,15 @@ void Update()
             }
         }
 
-        for (int i = 0; i < gF.Length; i++) {if (gF[i] == false) { str = str + "g\r\n"; continue; } str = str + Path.GetFileName(gFileName[i]).Replace("\n", "").Replace("\r", "") + "\r\n";}
-        for (int i = 0; i < sF.Length; i++) { if (sF[i]==false ) { str = str + "s\r\n"; continue; } str = str + Path.GetFileName(sFileName[i]).Replace("\n", "").Replace("\r", "") + "\r\n"; }
+        for (int i = 0; i < gF.Length; i++) { if (gF[i] == false) { str = str + "g\r\n"; continue; } str = str + Path.GetFileName(gFileName[i]).Replace("\n", "").Replace("\r", "") + "\r\n"; }
+        for (int i = 0; i < sF.Length; i++) { if (sF[i] == false) { str = str + "s\r\n"; continue; } str = str + Path.GetFileName(sFileName[i]).Replace("\n", "").Replace("\r", "") + "\r\n"; }
         str = str + "[END]";
         File.WriteAllText(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName, str);
         zf.Add(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName, Path.GetFileName(objBGM.GetComponent<BGMManager>().chapterName));
-        
+
         //画像サウンドファイルの作成※コマンドファイルで使われていないモノは保存しない＋zipから読み込んだ（既に同じものがzipにある）ファイルは保存しない。（というかファイルじゃないので参照しても取得に失敗する）
-        for (int i = 0; i < gFileName.Length; i++) { if (gFileName[i] != Path.GetFileName(gFileName[i]) && gF[i]==true){ try { zf.Add(@GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ\" + Path.GetFileName(gFileName[i]), Path.GetFileName(gFileName[i]));gFileName[i] = Path.GetFileName(gFileName[i]); } catch { } }  }//ファイルがなかったら（主に空き要素の場合）そのままスキップ
-        for (int i = 0; i < sFileName.Length; i++) { if (sFileName[i] != Path.GetFileName(sFileName[i]) && sF[i]==true) { try { zf.Add(@GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ\" + Path.GetFileName(sFileName[i]), Path.GetFileName(sFileName[i]));sFileName[i] = Path.GetFileName(sFileName[i]); } catch { } } }//一度更新したら、そのイベントを開いている間は同じデータを更新することはない。
+        for (int i = 0; i < gFileName.Length; i++) { if (gFileName[i] != Path.GetFileName(gFileName[i]) && gF[i] == true) { try { zf.Add(@GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ\" + Path.GetFileName(gFileName[i]), Path.GetFileName(gFileName[i])); gFileName[i] = Path.GetFileName(gFileName[i]); } catch { } } }//ファイルがなかったら（主に空き要素の場合）そのままスキップ
+        for (int i = 0; i < sFileName.Length; i++) { if (sFileName[i] != Path.GetFileName(sFileName[i]) && sF[i] == true) { try { zf.Add(@GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ\" + Path.GetFileName(sFileName[i]), Path.GetFileName(sFileName[i])); sFileName[i] = Path.GetFileName(sFileName[i]); } catch { } } }//一度更新したら、そのイベントを開いている間は同じデータを更新することはない。
     }
 
     private int SkillList2(string targetStr)
@@ -1575,7 +1594,7 @@ void Update()
         return target;
     }
 
-    private void TextDraw(string name,string text)
+    private void TextDraw(string name, string text)
     {
         objBackText.gameObject.SetActive(false);
         objTextBox.gameObject.SetActive(true);
@@ -1583,7 +1602,7 @@ void Update()
         objText.GetComponent<Text>().text = text;
         if (name == "[PC]")
         {
-            objName.GetComponent<Text>().text = "　" + PlayerPrefs.GetString("PlayerCharacterName","あなた");
+            objName.GetComponent<Text>().text = "　" + PlayerPrefs.GetString("PlayerCharacterName", "あなた");
         }
         else
         {
@@ -1596,7 +1615,7 @@ void Update()
         //背景テキスト表示の際は通常テキスト欄は消す
         objTextBox.gameObject.SetActive(false);
         objBackText.gameObject.SetActive(true);
-        text = text.Replace("[system]改行","\r\n").Replace("[PC]", PlayerPrefs.GetString("[system]PlayerCharacterName", "あなた"));
+        text = text.Replace("[system]改行", "\r\n").Replace("[PC]", PlayerPrefs.GetString("[system]PlayerCharacterName", "あなた"));
         objBackText.GetComponent<Text>().text = text;
     }
 
@@ -1610,13 +1629,13 @@ void Update()
         if (character == -1) { objCharacter[position - 1].gameObject.SetActive(false); return; }
         objCharacter[position - 1].gameObject.SetActive(true);
         objCharacter[position - 1].GetComponent<Image>().sprite = scenarioGraphic[character];
-        ObjSizeChangeToGraph(position-1,scenarioGraphic[character]);
+        ObjSizeChangeToGraph(position - 1, scenarioGraphic[character]);
     }
 
     //画像サイズに合わせて立ち絵サイズを変更
-    private void ObjSizeChangeToGraph(int position,Sprite sprite)
+    private void ObjSizeChangeToGraph(int position, Sprite sprite)
     {
-        objCharacter[position].GetComponent<RectTransform>().sizeDelta=new Vector2(sprite.pixelsPerUnit * sprite.bounds.size.x, sprite.pixelsPerUnit * sprite.bounds.size.y);
+        objCharacter[position].GetComponent<RectTransform>().sizeDelta = new Vector2(sprite.pixelsPerUnit * sprite.bounds.size.x, sprite.pixelsPerUnit * sprite.bounds.size.y);
     }
 
     public void MapBackButton(int num)

@@ -13,7 +13,7 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: "\u6C38\u4E45\u30D1\u30D4\u30EB\u30B9"
-  productName: "\u30AF\u30C8\u30A5\u30EB\u30D5\u795E\u8A71RPGAR\u30B7\u30CA\u30EA\u30AA\u30E1\u30FC\u30AB\u30FC"
+  productName: "\u30AF\u30C8\u30A5\u30EB\u30D5\u795E\u8A71AR\u30B7\u30CA\u30EA\u30AA\u30E1\u30FC\u30AB\u30FC"
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -116,7 +116,7 @@ PlayerSettings:
     16:10: 1
     16:9: 1
     Others: 1
-  bundleVersion: 0.2
+  bundleVersion: 1.2
   preloadedAssets: []
   metroInputSource: 0
   wsaTransparentSwapchain: 0

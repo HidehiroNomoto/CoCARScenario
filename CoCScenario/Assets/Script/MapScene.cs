@@ -39,6 +39,7 @@ public class MapScene : MonoBehaviour
     public List<string> tmpList = new List<string>();//test
     private int time = 0;
     public int fallNum = 0;
+    private int copynum = 0;
 
     void Start()
     {
@@ -593,7 +594,7 @@ public class MapScene : MonoBehaviour
             //以下、不使用データの削除処理
             ICSharpCode.SharpZipLib.Zip.ZipEntry ze= zf.GetEntry("[system]mapdata[system].txt");
             tmpList.Clear();
-            FileSearchLoop(ze, zf, tmpList);
+            FileSearchLoop(ze, zf);
 
             tmpList.Add("[system]mapdata[system].txt"); tmpList.Add("[system]password[system].txt"); tmpList.Add("[system]commandFileNum[system].txt");
             tmpList.Add("[system]command1[system]PC版スタート地点[system].txt"); tmpList.Add("[system]PC版スタート地点[system].txt");
@@ -622,7 +623,7 @@ public class MapScene : MonoBehaviour
         catch { }
     }
 
-    private void FileSearchLoop(ICSharpCode.SharpZipLib.Zip.ZipEntry ze, ICSharpCode.SharpZipLib.Zip.ZipFile zf,List<string> tmpList)
+    private void FileSearchLoop(ICSharpCode.SharpZipLib.Zip.ZipEntry ze, ICSharpCode.SharpZipLib.Zip.ZipFile zf)
     {
         bool next;
         if (ze.Name.Length > 4)
@@ -647,7 +648,7 @@ public class MapScene : MonoBehaviour
                             if (str == ze2.Name) { next = false; }
                         }
                         tmpList.Add(tmpStr);
-                        if (next == true) { FileSearchLoop(ze2, zf, tmpList); }
+                        if (next == true) { FileSearchLoop(ze2, zf); }
                     }
                 }//再帰でzeから繋がるツリーを総探査する。
             }
@@ -708,7 +709,7 @@ public class MapScene : MonoBehaviour
             str = strs2[j];
             strs = str.Replace("\r", "").Replace("\n", "").Split(',');
             
-                //ファイル名をチェックして同名にならないcopy番号を取得
+                //ファイル名をチェックして同名にならないcopy番号を取得(pastebuttonとcopynumで処理を統一しないのは、複数個コピーの際にここだけ別ループにありcopynumを正しく反映できないから)
                 for (int k = 0; k < 9999; k++) {for(int x=0;x<strList.Count;x++){ if (strList[x].Contains(strs[11].Substring(0,strs[11].Length-4) + "copy" + k.ToString() + ".txt")) { break; } if (x ==strList.Count-1) {  strs[11] = strs[11].Substring(0,strs[11].Length-4) + "copy" + k.ToString() + ".txt"; goto e3;} } }
                 e3:
                 for (int i = 0; i < 11; i++) { strs[i] = strs[i] + ","; }
@@ -717,8 +718,6 @@ public class MapScene : MonoBehaviour
         return strs3;
     }
 
-    //（バグ）2つめ以降のコピーが中身がない
-    //zip開いたままだとエラー出るから注意
     public void PasteButton()
     {
         string str = "";
@@ -747,8 +746,6 @@ public class MapScene : MonoBehaviour
             new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
         zf.Password = Secret.SecretString.zipPass;
 
-
-
         for (int j = 0; j < strs.Length; j++)
         {
             string[] strs2;
@@ -757,7 +754,7 @@ public class MapScene : MonoBehaviour
             ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(copyfile);
             tmpList.Clear();
                 //コピーファイルのリスト化
-                FileSearchLoop(ze, zf, tmpList);
+                FileSearchLoop(ze, zf);
             //ファイルのコピー
             for (int i = 0; i < tmpList.Count; i++)
             {
@@ -771,13 +768,13 @@ public class MapScene : MonoBehaviour
                         reader, System.Text.Encoding.GetEncoding("UTF-8"));
                     // テキストを取り出す
                     string text = sr.ReadToEnd();
-                    for (int k = 0; k < 9999; k++) { for (int x = 0; x < strList.Count; x++) { if (strList[x].Contains(copyfile.Substring(0,copyfile.Length-4) + "copy" + k.ToString() + ".txt")) { break; } if(x==strList.Count-1){ text = text.Replace(copyfile, copyfile.Substring(0,copyfile.Length-4) + "copy" + k.ToString() + ".txt");goto e1; } } }
+                    for (int k = 0; k < 9999; k++) { for (int x = 0; x < strList.Count; x++) { if (strList[x].Contains(copyfile.Substring(0,copyfile.Length-4) + "copy" + k.ToString() + ".txt")) { break; } if(x==strList.Count-1){ copynum = k; goto e1; } } }
                     e1:
+                    text = text.Replace(copyfile, copyfile.Substring(0, copyfile.Length - 4) + "copy" + copynum.ToString() + ".txt");
                     System.IO.File.WriteAllText(file, text);
                     //ZIP内のエントリの名前を決定する 
                     string f="dammyfile.txt";
-                    for (int k = 0; k < 9999; k++) { for (int x = 0; x < strList.Count; x++) { if (strList[x].Contains(copyfile.Substring(0, copyfile.Length - 4) + "copy" + k.ToString() + ".txt")) { break; } if(x==strList.Count-1){ f = System.IO.Path.GetFileName(tmpList[i].Replace(copyfile,copyfile.Substring(0, copyfile.Length - 4) + "copy" + k.ToString() + ".txt")); goto e2; } } }
-                    e2:
+                    f = System.IO.Path.GetFileName(tmpList[i].Replace(copyfile, copyfile.Substring(0, copyfile.Length - 4) + "copy" + copynum.ToString() + ".txt"));
                     //ZipFileの更新を開始
                     zf.BeginUpdate();
                     //ZIP書庫に一時的に書きだしておいたファイルを追加する
