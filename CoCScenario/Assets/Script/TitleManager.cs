@@ -11,6 +11,8 @@ public class TitleManager : MonoBehaviour {
     private GameObject startObj;
     public GameObject selectObj;
     public GameObject pass2Obj;
+    public GameObject objBGM;
+    IEnumerator routine=null;
 
     // Use this for initialization
     void Start()
@@ -23,15 +25,16 @@ Application.platform == RuntimePlatform.LinuxPlayer)
             Screen.SetResolution(900, 640, false);
         }
         selectObj = GameObject.Find("SelectButton");
+        objBGM = GameObject.Find("BGMManager");
         startObj = GameObject.Find("StartButton");
         nameObj = GameObject.Find("InputField"); nameObj.SetActive(false);
         //スライダーの現在位置をセーブされていた位置にする。
         GameObject.Find("SliderBGM").GetComponent<Slider>().value = PlayerPrefs.GetFloat("BGMVolume", 0.8f);
         GameObject.Find("SliderSE").GetComponent<Slider>().value = PlayerPrefs.GetFloat("SEVolume", 0.8f);
         //BGM再生
-        DontDestroyOnLoad(GameObject.Find("BGMManager"));//BGMマネージャーのオブジェクトはタイトル画面で作ってゲーム終了までそれを使用。
-        GameObject.Find("BGMManager").GetComponent<AudioSource>().volume = PlayerPrefs.GetFloat("BGMVolume", 0.8f);
-        GameObject.Find("BGMManager").GetComponent<BGMManager>().bgmChange(true, 0);//BGMManager内部変数の初期化
+        DontDestroyOnLoad(objBGM);//BGMマネージャーのオブジェクトはタイトル画面で作ってゲーム終了までそれを使用。
+        objBGM.GetComponent<AudioSource>().volume = PlayerPrefs.GetFloat("BGMVolume", 0.8f);
+        objBGM.GetComponent<BGMManager>().bgmChange(true, 0);//BGMManager内部変数の初期化
     }
 
     // Update is called once per frame
@@ -42,35 +45,64 @@ Application.platform == RuntimePlatform.LinuxPlayer)
 
     public void PushStartButton()
     {
+        if (routine != null) { StopCoroutine(routine); }
+        routine = null;
+        routine = ButtonComeBack(60);
+        StartCoroutine(routine);
         nameObj.SetActive(true);
         startObj.SetActive(false);
-        selectObj.SetActive(true);
+        selectObj.SetActive(false);
         pass2Obj.SetActive(false);
     }
 
     public void PushDecideButton()
     {
-        string scenarioName,scenarioPass;
+        string scenarioName, scenarioPass,dataFolderPath;
         scenarioName = GameObject.Find("InputField").GetComponent<InputField>().text;
-        scenarioPass= GameObject.Find("InputFieldPass").GetComponent<InputField>().text;
-        ZipMake(scenarioName,scenarioPass);
-        PlayerPrefs.SetString("進行中シナリオ", @GetComponent<Utility>().GetAppPath() + @"\" + scenarioName + ".zip");
+        scenarioPass = GameObject.Find("InputFieldPass").GetComponent<InputField>().text;
+        if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
+        {
+            dataFolderPath = @GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + scenarioName + ".zip";
+        }
+        else
+        {
+            dataFolderPath = @GetComponent<Utility>().GetAppPath().Substring(0, @GetComponent<Utility>().GetAppPath().Length - 25) + objBGM.GetComponent<BGMManager>().folderChar + scenarioName + ".zip";
+        }
+        ZipMake(dataFolderPath, scenarioPass);
+        PlayerPrefs.SetString("進行中シナリオ",dataFolderPath);
         GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "MapScene");
     }
 
     public void PushSelectButton()
     {
+
+        if (routine != null) { StopCoroutine(routine); }
+        routine = null;
+        routine = ButtonComeBack(60);
+        StartCoroutine(routine);
         nameObj.SetActive(false);
-        startObj.SetActive(true);
+        startObj.SetActive(false);
         selectObj.SetActive(false);
         GetComponent<GracesGames.SimpleFileBrowser.Scripts.FileOpenManager>().GetFilePathWithKey("進行中シナリオ");
+    }
+
+    private IEnumerator ButtonComeBack(int time)
+    {
+        for (int i = 0; i < time; i++) { yield return null; }
+        startObj.SetActive(true);
+        selectObj.SetActive(true);
+    }
+
+    public void PushJumpButton()
+    {
+        Application.OpenURL("http://www1366uj.sakura.ne.jp/public_html/scenario/upload/upload.cgi");
     }
 
     private void ZipMake(string scenarioName,string scenarioPass)
     {
         string str="[END]";
-        string file = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]mapdata[system].txt";
-        string file2 = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]password[system].txt";
+        string file = @GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + "[system]mapdata[system].txt";
+        string file2 = @GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + "[system]password[system].txt";
         //先に[system]mapdata.txtと[system]password.txtを一時的に書き出しておく。
 
         str = ",,,,,,,,,,,[system]PC版スタート地点[system].txt\r\n,,,,,,,,,,,[system]導入シーン(導入は発生条件なしで作るのがお勧め).txt\r\n[END]";
@@ -78,7 +110,7 @@ Application.platform == RuntimePlatform.LinuxPlayer)
         System.IO.File.WriteAllText(file2, scenarioPass);
 
         //作成するZIP書庫のパス
-        string zipPath = @GetComponent<Utility>().GetAppPath() + @"\" + scenarioName + ".zip";
+        string zipPath = scenarioName;
         //ZipFileオブジェクトの作成
         ICSharpCode.SharpZipLib.Zip.ZipFile zf =
             ICSharpCode.SharpZipLib.Zip.ZipFile.Create(zipPath);

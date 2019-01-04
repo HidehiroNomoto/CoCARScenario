@@ -16,6 +16,7 @@ public class BGMManager : MonoBehaviour {
     public string[] sFileName = new string[40];
     public Sprite[] scenarioGraphic = new Sprite[100];       //シナリオ画像保存変数
     public AudioClip[] scenarioAudio = new AudioClip[40];    //シナリオＢＧＭ・ＳＥ保存変数
+    public string folderChar = "";
 
     public struct bgmFlag
     {
@@ -26,7 +27,14 @@ public class BGMManager : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-
+        if (Application.platform == RuntimePlatform.WindowsPlayer)
+        {
+           folderChar= @"\";
+        }
+        else
+        {
+            folderChar = @"/";
+        }
     }
 
 	

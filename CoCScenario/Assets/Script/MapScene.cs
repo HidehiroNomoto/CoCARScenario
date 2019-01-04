@@ -33,13 +33,14 @@ public class MapScene : MonoBehaviour
     public int selectBefore=-1;
     public List<int> multiSelect = new List<int>();
     public bool URBool=false;
-    private List<string> undoList = new List<string>();
+    public List<string> undoList = new List<string>();
     private int undoListNum = 0;
     private bool copyBool = false;
     public List<string> tmpList = new List<string>();//test
     private int time = 0;
     public int fallNum = 0;
     private int copynum = 0;
+    public GameObject PLIventToggle;
 
     void Start()
     {
@@ -152,6 +153,7 @@ public class MapScene : MonoBehaviour
             if (undoFlag == false) { GameObject.Find("Error").GetComponent<Text>().text = "これ以上進めません。"; }
             StartCoroutine(ErrorWait());
         }
+        selectNum = -1;
     }
 
     public void GetMap()
@@ -276,6 +278,7 @@ public class MapScene : MonoBehaviour
 
     public void IventAddButton()
     {
+        string str2;
         if (selectNum >= 0)//初期位置設定の前にイベントボタンを追加させない。selectNum==-1で追加すると追加できてしまうのでそのケースを排除。
         {
             //追加ボタンが押されたらイベントボタンを追加する。
@@ -284,7 +287,12 @@ public class MapScene : MonoBehaviour
             objIB[selectNum + 1].GetComponent<IventButton>().buttonNum = selectNum + 1;
             objIB[selectNum + 1].GetComponent<Transform>().SetSiblingIndex(selectNum + 1);
             for (int i = selectNum + 2; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum++; }//追加分の後ろはボタン番号が１増える。
-            mapData.Insert(selectNum + 1, "");
+            mapData.Insert(selectNum + 1, ",,,,,,,,,,,[system]空イベント.txt");
+
+            str2 = "";
+            for (int i = 0; i < mapData.Count; i++) { if (mapData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str2 = str2 + mapData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
+            undoList.Add(str2);
+            undoListNum = undoList.Count - 1;
         }
         else
         {
@@ -374,6 +382,7 @@ public class MapScene : MonoBehaviour
                 FirstPlace.SetActive(false);
                 IventMake.SetActive(true);
                 strs = mapData[selectNum].Replace("\r","").Replace("\n","").Split(',');
+                if (strs[10].Contains(" [system]任意イベント")) { PLIventToggle.GetComponent<Toggle>().isOn = true;strs[10]=strs[10].Replace(" [system]任意イベント",""); }
                 inputField[0].text = strs[11].Substring(0, strs[11].Length - 4).Replace("[system]","");
                 inputField[1].text = strs[0];
                 inputField[2].text = strs[1];
@@ -445,13 +454,16 @@ public class MapScene : MonoBehaviour
     public void InputDecideButton()
     {
         string str3;
+        string PLIvent = "";
+   
         try
         {
             if (inputField[0].text.Contains("[system]")) { GameObject.Find("Error").GetComponent<Text>().text = "「<color=red>[system]</color>」という文字列は使用禁止です。(システム処理の識別語にしています)"; StartCoroutine(ErrorWait()); return; }
             if (selectNum > 0)
             {
-                if (mapData.Count <= selectNum) { for (int i = mapData.Count; i <= selectNum; i++) { mapData.Add(""); } }//mapDataの要素数をselectNumが越えたら配列の要素数を合わせて増やす。中身は空でOK。（イベント追加されるとmapData.Count以上の番号を持つイベントができるため）
-                mapData[selectNum] = inputField[1].text + "," + inputField[2].text + "," + inputField[3].text + "," + inputField[4].text + "," + inputField[5].text + "," + inputField[6].text + "," + inputField[7].text + "," + inputField[8].text + "," + inputField[9].text + "," + inputField[10].text + "," + inputField[11].text + ",[system]" + inputField[0].text + ".txt\n";
+                if (PLIventToggle.GetComponent<Toggle>().isOn) { PLIvent = " [system]任意イベント"; }
+                if (mapData.Count <= selectNum) { for (int i = mapData.Count; i <= selectNum; i++) { mapData.Add(",,,,,,,,,,,[system]空イベント.txt"); } }//mapDataの要素数をselectNumが越えたら配列の要素数を合わせて増やす。中身は空でOK。（イベント追加されるとmapData.Count以上の番号を持つイベントができるため）
+                mapData[selectNum] = inputField[1].text + "," + inputField[2].text + "," + inputField[3].text + "," + inputField[4].text + "," + inputField[5].text + "," + inputField[6].text + "," + inputField[7].text + "," + inputField[8].text + "," + inputField[9].text + "," + inputField[10].text + "," + inputField[11].text + PLIvent + ",[system]" + inputField[0].text + ".txt\n";
                 objIB[selectNum].GetComponentInChildren<Text>().text = MapDataToButton(mapData[selectNum]);
 
                 //ファイルチェックして（未）をつける
@@ -461,8 +473,10 @@ public class MapScene : MonoBehaviour
                 zf.Password = Secret.SecretString.zipPass;
                 ScenarioFileCheck(selectNum, zf);
                 zf.Close();
+            if (inputField[1].text != "" && inputField[2].text != "")
+            {
                 latitude = Convert.ToDouble(inputField[1].text); longitude = Convert.ToDouble(inputField[2].text);
-
+            }
                 str3 = "";
                 for (int i = 0; i < mapData.Count; i++) { if (mapData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str3 = str3 + mapData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
                 undoList.Add(str3);
@@ -476,8 +490,8 @@ public class MapScene : MonoBehaviour
                                                           //ZIP書庫のパス
                 string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
                 //書庫に追加するファイルのパス
-                string file = @GetComponent<Utility>().GetAppPath() + @"\[system]PC版スタート地点[system].txt";
-                string file2 = @GetComponent<Utility>().GetAppPath() + @"\[system]command1[system]PC版スタート地点[system].txt";
+                string file = @GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + @"[system]PC版スタート地点[system].txt";
+                string file2 = @GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + @"[system]command1[system]PC版スタート地点[system].txt";
 
                 //先にテキストファイルを一時的に書き出しておく。
                 str = str + System.IO.Path.GetFileName(file2);
@@ -570,7 +584,7 @@ public class MapScene : MonoBehaviour
             //ZIP書庫のパス
             string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
             //書庫に追加するファイルのパス
-            string file = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]mapdata[system].txt";
+            string file = @GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + "[system]mapdata[system].txt";
 
             //先に[system]mapdata.txtを一時的に書き出しておく。
             for (int i = 0; i < mapData.Count; i++) { if (mapData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str = str + mapData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
@@ -723,7 +737,7 @@ public class MapScene : MonoBehaviour
         string str = "";
         string[] strs;
         string copyfile = "";
-        string file = @GetComponent<Utility>().GetAppPath() + @"\" + "tmp.txt";
+        string file = @GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + "tmp.txt";
         if (objBGM.GetComponent<BGMManager>().copyMapString == "")
         {
             GameObject.Find("Error").GetComponent<Text>().text = "先にコピー元を選んでください。";
@@ -751,38 +765,45 @@ public class MapScene : MonoBehaviour
             string[] strs2;
             strs2 = strs[j].Split(',');
             copyfile=strs2[11].Replace("\r", "").Replace("\n", "");
-            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(copyfile);
-            tmpList.Clear();
+            try
+            {
+                ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(copyfile);
+                tmpList.Clear();
+
                 //コピーファイルのリスト化
                 FileSearchLoop(ze, zf);
-            //ファイルのコピー
-            for (int i = 0; i < tmpList.Count; i++)
-            {
-                ICSharpCode.SharpZipLib.Zip.ZipEntry ze2 = zf.GetEntry(tmpList[i]);
-                if (ze2.Name.Length>4 && ze2.Name.Substring(ze2.Name.Length - 4) == ".txt")
+                //ファイルのコピー
+                for (int i = 0; i < tmpList.Count; i++)
                 {
-                    //閲覧するZIPエントリのStreamを取得
-                    System.IO.Stream reader = zf.GetInputStream(ze2);
-                    //文字コードを指定してStreamReaderを作成
-                    System.IO.StreamReader sr = new System.IO.StreamReader(
-                        reader, System.Text.Encoding.GetEncoding("UTF-8"));
-                    // テキストを取り出す
-                    string text = sr.ReadToEnd();
-                    for (int k = 0; k < 9999; k++) { for (int x = 0; x < strList.Count; x++) { if (strList[x].Contains(copyfile.Substring(0,copyfile.Length-4) + "copy" + k.ToString() + ".txt")) { break; } if(x==strList.Count-1){ copynum = k; goto e1; } } }
-                    e1:
-                    text = text.Replace(copyfile, copyfile.Substring(0, copyfile.Length - 4) + "copy" + copynum.ToString() + ".txt");
-                    System.IO.File.WriteAllText(file, text);
-                    //ZIP内のエントリの名前を決定する 
-                    string f="dammyfile.txt";
-                    f = System.IO.Path.GetFileName(tmpList[i].Replace(copyfile, copyfile.Substring(0, copyfile.Length - 4) + "copy" + copynum.ToString() + ".txt"));
-                    //ZipFileの更新を開始
-                    zf.BeginUpdate();
-                    //ZIP書庫に一時的に書きだしておいたファイルを追加する
-                    zf.Add(file, f);
-                    //ZipFileの更新をコミット
-                    zf.CommitUpdate();
+                    ICSharpCode.SharpZipLib.Zip.ZipEntry ze2 = zf.GetEntry(tmpList[i]);
+                    if (ze2.Name.Length > 4 && ze2.Name.Substring(ze2.Name.Length - 4) == ".txt")
+                    {
+                        //閲覧するZIPエントリのStreamを取得
+                        System.IO.Stream reader = zf.GetInputStream(ze2);
+                        //文字コードを指定してStreamReaderを作成
+                        System.IO.StreamReader sr = new System.IO.StreamReader(
+                            reader, System.Text.Encoding.GetEncoding("UTF-8"));
+                        // テキストを取り出す
+                        string text = sr.ReadToEnd();
+                        for (int k = 0; k < 9999; k++) { for (int x = 0; x < strList.Count; x++) { if (strList[x].Contains(copyfile.Substring(0, copyfile.Length - 4) + "copy" + k.ToString() + ".txt")) { break; } if (x == strList.Count - 1) { copynum = k; goto e1; } } }
+                        e1:
+                        text = text.Replace(copyfile, copyfile.Substring(0, copyfile.Length - 4) + "copy" + copynum.ToString() + ".txt");
+                        System.IO.File.WriteAllText(file, text);
+                        //ZIP内のエントリの名前を決定する 
+                        string f = "dammyfile.txt";
+                        f = System.IO.Path.GetFileName(tmpList[i].Replace(copyfile, copyfile.Substring(0, copyfile.Length - 4) + "copy" + copynum.ToString() + ".txt"));
+                        //ZipFileの更新を開始
+                        zf.BeginUpdate();
+                        //ZIP書庫に一時的に書きだしておいたファイルを追加する
+                        zf.Add(file, f);
+                        //ZipFileの更新をコミット
+                        zf.CommitUpdate();
 
+                    }
                 }
+            }
+            catch
+            {
             }
         }
         //一時的に書きだしたtmp.txtを消去する。

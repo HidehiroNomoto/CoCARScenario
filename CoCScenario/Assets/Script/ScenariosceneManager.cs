@@ -62,6 +62,7 @@ public class ScenariosceneManager : MonoBehaviour
     private int time = 0;
     public InputField[] inputs = new InputField[42];
     public int fallNum = 0;
+    private string dataFolderPath = "";
 
     // Use this for initialization
     void Start()
@@ -472,7 +473,7 @@ public class ScenariosceneManager : MonoBehaviour
                 text = text.Replace(commandName, tmp2);
                 text = text.Replace(objBGM.GetComponent<BGMManager>().chapterName, tmp1);
                 if (text2 == text) { continue; }
-                StreamWriter sw = new StreamWriter(@GetComponent<Utility>().GetAppPath() + @"\" + "tmp" + inum.ToString() + ".txt", false, System.Text.Encoding.GetEncoding("UTF-8"));
+                StreamWriter sw = new StreamWriter(@GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + "tmp" + inum.ToString() + ".txt", false, System.Text.Encoding.GetEncoding("UTF-8"));
                 //TextBox1.Textの内容を書き込む
                 sw.Write(text);
                 //閉じる
@@ -494,7 +495,7 @@ public class ScenariosceneManager : MonoBehaviour
 
         //閉じる
         zf.Close();
-        for (int i = 0; i < inum; i++) { File.Delete(@GetComponent<Utility>().GetAppPath() + @"\" + "tmp" + i.ToString() + ".txt"); }
+        for (int i = 0; i < inum; i++) { File.Delete(@GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + "tmp" + i.ToString() + ".txt"); }
         for (int i = 0; i < commandData.Count; i++) { commandData[i] = commandData[i].Replace(commandName, tmp2).Replace(objBGM.GetComponent<BGMManager>().chapterName, tmp1); }
         for (int i = 0; i < objCB.Count; i++) { objCB[i].transform.Find("Text").GetComponent<Text>().text = commandData[i]; }
         for (int i = 0; i < backFileLog.Count; i++) { backFileLog[i] = backFileLog[i].Replace(commandName, tmp2).Replace(objBGM.GetComponent<BGMManager>().chapterName, tmp1); }
@@ -600,7 +601,7 @@ public class ScenariosceneManager : MonoBehaviour
             //ZIP書庫のパス
             string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
             //書庫に追加するファイルのパス
-            string file = @GetComponent<Utility>().GetAppPath() + @"\" + "[system]commandFileNum[system].txt";
+            string file = @GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + "[system]commandFileNum[system].txt";
 
             //先にテキストファイルを一時的に書き出しておく。
             File.WriteAllText(file, str);
@@ -850,6 +851,15 @@ public class ScenariosceneManager : MonoBehaviour
 
     private void StartScene()
     {
+        string[] files;
+        if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
+        {
+            dataFolderPath = @GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ";
+        }
+        else
+        {
+            dataFolderPath=@GetComponent<Utility>().GetAppPath().Substring(0, @GetComponent<Utility>().GetAppPath().Length - 25) + @"/シナリオに使うpngやwavを入れるフォルダ";
+        }
         graphicNum = 0; soundNum = 0;
         List<string> tmp = LoadIventData(objBGM.GetComponent<BGMManager>().chapterName);
         for (int i = 0; i < tmp.Count; i++)
@@ -858,7 +868,7 @@ public class ScenariosceneManager : MonoBehaviour
         }
         try
         {
-            string[] files = Directory.GetFiles(@GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ", "*", SearchOption.AllDirectories);
+                files = Directory.GetFiles(dataFolderPath);        
             for (int i = 0; i < scenarioGraphic.Length - 1; i++) { if (gFileName[i] != "" && gFileName != null) { graphicNum = i; } }
             for (int i = 0; i < scenarioAudio.Length; i++) { if (sFileName[i] != "" && sFileName != null) { soundNum = i; } }
             for (int i = 0; i < files.Length; i++)
@@ -1017,22 +1027,19 @@ public class ScenariosceneManager : MonoBehaviour
         }
     }
 
+    byte[] ReadFile(string path)
+    {
+        FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
+        BinaryReader bin = new BinaryReader(fileStream);
+        byte[] values = bin.ReadBytes((int)bin.BaseStream.Length);
 
-
-
-
+        bin.Close();
+        fileStream.Close();
+        return values;
+    }
 
     private IEnumerator LoadFile(string path)
     {
-        path = path.Replace("\n", "").Replace("\r", "");
-        // 指定したファイルをロードする
-        WWW request = new WWW(path);
-
-        while (!request.isDone)
-        {
-            yield return new WaitForEndOfFrame();
-        }
-
         if (graphicNum >= scenarioGraphic.Length - 1)
         {
             GameObject.Find("Error").GetComponent<Text>().text = "画像ファイル数が９９個を越えたため読み込めなかったファイルがあります。";
@@ -1048,7 +1055,24 @@ public class ScenariosceneManager : MonoBehaviour
         if (path.Substring(path.Length - 4) == ".png")
         {
             // 画像を取り出す
-            Texture2D texture = request.texture;
+            byte[] readBinary = ReadFile(path);
+
+            int pos = 16; // 16バイトから開始
+
+            int width = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                width = width * 256 + readBinary[pos++];
+            }
+
+            int height = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                height = height * 256 + readBinary[pos++];
+            }
+
+            Texture2D texture = new Texture2D(width, height);
+            texture.LoadImage(readBinary);
 
             //同名ファイルが既にzipに入っていれば上書き
             if (Array.IndexOf(gFileName, Path.GetFileName(path)) >= 0) { scenarioGraphic[Array.IndexOf(gFileName, Path.GetFileName(path))] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f)); gFileName[Array.IndexOf(gFileName, Path.GetFileName(path))] = path; yield break; }
@@ -1069,23 +1093,24 @@ public class ScenariosceneManager : MonoBehaviour
                 scenarioGraphic[graphicNum] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
                 graphicNum++;
             }
+
         }
 
         //wavファイルの場合
         if (path.Substring(path.Length - 4) == ".wav")
         {
-            yield return StartCoroutine(LoadBGM(request, path));
+            byte[] readBinary = ReadFile(path);
+            yield return StartCoroutine(LoadBGM(readBinary, path));
         }
+
         yield return null;
     }
 
-    private IEnumerator LoadBGM(WWW request, string path)
+    private IEnumerator LoadBGM(byte[] buffer, string path)
     {
-        //同名ファイルが既にzipに入っていれば上書き
-
         if (Array.IndexOf(sFileName, Path.GetFileName(path)) >= 0)
         {
-            scenarioAudio[Array.IndexOf(sFileName, Path.GetFileName(path))] = request.GetAudioClip(false, true);
+            scenarioAudio[Array.IndexOf(sFileName, Path.GetFileName(path))] = WavUtility.ToAudioClip(buffer);
             while (scenarioAudio[Array.IndexOf(sFileName, Path.GetFileName(path))].loadState == AudioDataLoadState.Loading)
             {
                 // ロードが終わるまで待つ
@@ -1106,7 +1131,7 @@ public class ScenariosceneManager : MonoBehaviour
         {
             if (scenarioAudio[j] == null)
             {
-                scenarioAudio[j] = request.GetAudioClip(false, true);
+                scenarioAudio[j] = WavUtility.ToAudioClip(buffer);
                 while (scenarioAudio[j].loadState == AudioDataLoadState.Loading)
                 {
                     // ロードが終わるまで待つ
@@ -1128,7 +1153,7 @@ public class ScenariosceneManager : MonoBehaviour
         if (soundNum < scenarioAudio.Length)
         {
             sFileName[soundNum] = path;
-            scenarioAudio[soundNum] = request.GetAudioClip(false, true);
+            scenarioAudio[soundNum] = WavUtility.ToAudioClip(buffer);
             soundNum++;
             while (scenarioAudio[soundNum].loadState == AudioDataLoadState.Loading)
             {
@@ -1238,7 +1263,7 @@ public class ScenariosceneManager : MonoBehaviour
         if (objCB.Count < 90 - 1)//90コまで
         {
             objCB.Insert(selectNum + 1, Instantiate(objCommand) as GameObject);
-            commandData.Insert(selectNum + 1, "");
+            commandData.Insert(selectNum + 1, "Title:(未設定コマンド。タイトルバックとして機能します)");
             objCB[selectNum + 1].transform.SetParent(parentObject.transform, false);
             objCB[selectNum + 1].GetComponent<CommandButton>().buttonNum = selectNum + 1;
             objCB[selectNum + 1].GetComponent<Transform>().SetSiblingIndex(selectNum + 1);
@@ -1438,7 +1463,7 @@ public class ScenariosceneManager : MonoBehaviour
                                               //ZIP書庫のパス
             string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
             //書庫に追加するファイルのパス
-            string file = @GetComponent<Utility>().GetAppPath() + @"\" + commandName;
+            string file = @GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + commandName;
 
             //先にテキストファイルを一時的に書き出しておく。
             for (int i = 0; i < commandData.Count; i++) { if (commandData[i].Replace("\n", "").Replace("\r", "") == "") { str = str + "Title:(未設定コマンド。タイトルバックとして機能します)\r\n"; continue; } str = str + commandData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
@@ -1468,7 +1493,7 @@ public class ScenariosceneManager : MonoBehaviour
 
             //一時的に書きだしたファイルを消去する。
             File.Delete(file);
-            File.Delete(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName);
+            File.Delete(@GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + objBGM.GetComponent<BGMManager>().chapterName);
         }
         catch { }
     }
@@ -1480,6 +1505,8 @@ public class ScenariosceneManager : MonoBehaviour
         bool[] sF = new bool[scenarioAudio.Length];
         //冒頭コマンドファイルを入れる。
         string str = "[system]command1" + objBGM.GetComponent<BGMManager>().chapterName + "\r\n";
+
+        
         //先にテキストファイルを一時的に書き出しておく。※コマンドファイルで使われていないモノは保存しない。
         foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry ze in zf)
         {
@@ -1509,12 +1536,12 @@ public class ScenariosceneManager : MonoBehaviour
         for (int i = 0; i < gF.Length; i++) { if (gF[i] == false) { str = str + "g\r\n"; continue; } str = str + Path.GetFileName(gFileName[i]).Replace("\n", "").Replace("\r", "") + "\r\n"; }
         for (int i = 0; i < sF.Length; i++) { if (sF[i] == false) { str = str + "s\r\n"; continue; } str = str + Path.GetFileName(sFileName[i]).Replace("\n", "").Replace("\r", "") + "\r\n"; }
         str = str + "[END]";
-        File.WriteAllText(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName, str);
-        zf.Add(@GetComponent<Utility>().GetAppPath() + @"\" + objBGM.GetComponent<BGMManager>().chapterName, Path.GetFileName(objBGM.GetComponent<BGMManager>().chapterName));
+        File.WriteAllText(@GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + objBGM.GetComponent<BGMManager>().chapterName, str);
+        zf.Add(@GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + objBGM.GetComponent<BGMManager>().chapterName, Path.GetFileName(objBGM.GetComponent<BGMManager>().chapterName));
 
         //画像サウンドファイルの作成※コマンドファイルで使われていないモノは保存しない＋zipから読み込んだ（既に同じものがzipにある）ファイルは保存しない。（というかファイルじゃないので参照しても取得に失敗する）
-        for (int i = 0; i < gFileName.Length; i++) { if (gFileName[i] != Path.GetFileName(gFileName[i]) && gF[i] == true) { try { zf.Add(@GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ\" + Path.GetFileName(gFileName[i]), Path.GetFileName(gFileName[i])); gFileName[i] = Path.GetFileName(gFileName[i]); } catch { } } }//ファイルがなかったら（主に空き要素の場合）そのままスキップ
-        for (int i = 0; i < sFileName.Length; i++) { if (sFileName[i] != Path.GetFileName(sFileName[i]) && sF[i] == true) { try { zf.Add(@GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ\" + Path.GetFileName(sFileName[i]), Path.GetFileName(sFileName[i])); sFileName[i] = Path.GetFileName(sFileName[i]); } catch { } } }//一度更新したら、そのイベントを開いている間は同じデータを更新することはない。
+        for (int i = 0; i < gFileName.Length; i++) { if (gFileName[i] != Path.GetFileName(gFileName[i]) && gF[i] == true) { try { zf.Add(dataFolderPath + objBGM.GetComponent<BGMManager>().folderChar + Path.GetFileName(gFileName[i]), Path.GetFileName(gFileName[i])); gFileName[i] = Path.GetFileName(gFileName[i]); } catch { } } }//ファイルがなかったら（主に空き要素の場合）そのままスキップ
+        for (int i = 0; i < sFileName.Length; i++) { if (sFileName[i] != Path.GetFileName(sFileName[i]) && sF[i] == true) { try { zf.Add(dataFolderPath + objBGM.GetComponent<BGMManager>().folderChar + Path.GetFileName(sFileName[i]), Path.GetFileName(sFileName[i])); sFileName[i] = Path.GetFileName(sFileName[i]); } catch { } } }//一度更新したら、そのイベントを開いている間は同じデータを更新することはない。
     }
 
     private int SkillList2(string targetStr)
