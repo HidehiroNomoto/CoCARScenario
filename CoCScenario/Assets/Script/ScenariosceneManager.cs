@@ -27,7 +27,7 @@ public class ScenariosceneManager : MonoBehaviour
     List<GameObject> objGS = new List<GameObject>();
     public List<string> commandData = new List<string>();
     private string[] gFileName = new string[99];
-    private string[] sFileName = new string[40];
+    public string[] sFileName = new string[40];
     public GameObject[] objMake = new GameObject[30];
     public int selectNum = -1;
     private string commandName;
