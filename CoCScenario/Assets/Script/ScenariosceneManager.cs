@@ -903,7 +903,7 @@ public class ScenariosceneManager : MonoBehaviour
             {
 
                 //jpgファイルの場合
-                if (path.Substring(path.Length - 4) == ".jpg" || path.Substring(path.Length - 4) == ".JPG" || path.Substring(path.Length - 4) == ".jpeg" || path.Substring(path.Length - 4) == ".JPEG")
+                if (path.Substring(path.Length - 4) == ".jpg" || path.Substring(path.Length - 4) == ".JPG" || path.Substring(path.Length - 5) == ".jpeg" || path.Substring(path.Length - 5) == ".JPEG")
                 {
                     //閲覧するZIPエントリのStreamを取得
                     Stream fs = zf.GetInputStream(ze);
@@ -1130,7 +1130,7 @@ public class ScenariosceneManager : MonoBehaviour
         }
 
         //jpgファイルの場合
-        if (path.Substring(path.Length - 4) == ".jpg" || path.Substring(path.Length - 4) == ".JPG" || path.Substring(path.Length - 4) == ".jpeg" || path.Substring(path.Length - 4) == ".JPEG")
+        if (path.Substring(path.Length - 4) == ".jpg" || path.Substring(path.Length - 4) == ".JPG" || path.Substring(path.Length - 5) == ".jpeg" || path.Substring(path.Length - 5) == ".JPEG")
         {
             // 画像を取り出す
             byte[] readBinary = ReadFile(path);
