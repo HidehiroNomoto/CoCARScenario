@@ -59,6 +59,7 @@ Application.platform == RuntimePlatform.LinuxPlayer)
     {
         string scenarioName, scenarioPass,dataFolderPath;
         scenarioName = GameObject.Find("InputField").GetComponent<InputField>().text;
+        if (scenarioName == "") { scenarioName = "NoNameScenario"; }
         scenarioPass = GameObject.Find("InputFieldPass").GetComponent<InputField>().text;
         if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
         {
