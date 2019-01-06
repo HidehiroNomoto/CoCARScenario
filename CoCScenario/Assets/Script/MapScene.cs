@@ -382,7 +382,7 @@ public class MapScene : MonoBehaviour
                 FirstPlace.SetActive(false);
                 IventMake.SetActive(true);
                 strs = mapData[selectNum].Replace("\r","").Replace("\n","").Split(',');
-                if (strs[10].Contains(" [system]任意イベント")) { PLIventToggle.GetComponent<Toggle>().isOn = true;strs[10]=strs[10].Replace(" [system]任意イベント",""); }
+                if (strs[10].Contains(" [system]任意イベント")) { PLIventToggle.GetComponent<Toggle>().isOn = true; strs[10] = strs[10].Replace(" [system]任意イベント", ""); } else { PLIventToggle.GetComponent<Toggle>().isOn = false; }
                 inputField[0].text = strs[11].Substring(0, strs[11].Length - 4).Replace("[system]","");
                 inputField[1].text = strs[0];
                 inputField[2].text = strs[1];
