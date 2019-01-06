@@ -869,9 +869,10 @@ public class ScenariosceneManager : MonoBehaviour
         }
         try
         {
-                files = Directory.GetFiles(dataFolderPath);        
-            for (int i = 0; i < scenarioGraphic.Length - 1; i++) { if (gFileName[i] != "" && gFileName != null) { graphicNum = i; } }
-            for (int i = 0; i < scenarioAudio.Length; i++) { if (sFileName[i] != "" && sFileName != null) { soundNum = i; } }
+                files = Directory.GetFiles(dataFolderPath);
+            graphicNum = 0;soundNum = 0;
+            //for (int i = 0; i < scenarioGraphic.Length - 1; i++) { if (gFileName[i] != "" && gFileName != null) { graphicNum = i; } }
+            //for (int i = 0; i < scenarioAudio.Length; i++) { if (sFileName[i] != "" && sFileName != null) { soundNum = i; } }
             for (int i = 0; i < files.Length; i++)
             {
                 StartCoroutine(LoadFile(files[i]));//素材フォルダのファイルを読み込む。
@@ -1172,7 +1173,8 @@ public class ScenariosceneManager : MonoBehaviour
         //mp3ファイルの場合
         if (path.Substring(path.Length - 4) == ".mp3" || path.Substring(path.Length - 4) == ".MP3")
         {
-            yield return StartCoroutine(LoadBGM(null, path));
+            byte[] readBinary= {1,2};
+            yield return StartCoroutine(LoadBGM(readBinary, path));
         }
 
         yield return null;
@@ -1180,7 +1182,7 @@ public class ScenariosceneManager : MonoBehaviour
 
     private IEnumerator LoadBGM(byte[] buffer, string path)
     {
-        if (buffer == null)
+        if (buffer.Length==2)
         {
             if (Array.IndexOf(sFileName, Path.GetFileName(path)) >= 0)
             {
@@ -1207,7 +1209,7 @@ public class ScenariosceneManager : MonoBehaviour
                 soundNum++;
             }
         }
-        else
+        else if(buffer != null)
         {
             if (Array.IndexOf(sFileName, Path.GetFileName(path)) >= 0)
             {
