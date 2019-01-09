@@ -863,10 +863,15 @@ public class ScenariosceneManager : MonoBehaviour
         }
         graphicNum = 0; soundNum = 0;
         List<string> tmp = LoadIventData(objBGM.GetComponent<BGMManager>().chapterName);
+        //ZipFileオブジェクトの作成
+        ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+            new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
+        zf.Password = Secret.SecretString.zipPass;
         for (int i = 0; i < tmp.Count; i++)
         {
-            ZipRead(tmp[i]);//zipにあるイベントに関連するpngやwavを読み込む。
+            ZipRead(tmp[i],zf);//zipにあるイベントに関連するpngやwavを読み込む。
         }
+        zf.Close();
         try
         {
                 files = Directory.GetFiles(dataFolderPath);
@@ -883,15 +888,12 @@ public class ScenariosceneManager : MonoBehaviour
         LoadCommandData("[system]command1" + objBGM.GetComponent<BGMManager>().chapterName);
     }
 
-    private void ZipRead(string path)
+    private void ZipRead(string path, ICSharpCode.SharpZipLib.Zip.ZipFile zf)
     {
         byte[] buffer;
-        //try
-        //{
-            //ZipFileオブジェクトの作成
-            ICSharpCode.SharpZipLib.Zip.ZipFile zf =
-                new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
-            zf.Password = Secret.SecretString.zipPass;
+        try
+        {
+
 
             //閲覧するエントリ
             string extractFile = path;
@@ -970,20 +972,6 @@ public class ScenariosceneManager : MonoBehaviour
                     //閉じる
                     fs.Close();
                 }
-                //mp3ファイルの場合
-                if (path.Substring(path.Length - 4) == ".mp3" || path.Substring(path.Length - 4) == ".MP3")
-                {
-                    //閲覧するZIPエントリのStreamを取得
-                    Stream fs = zf.GetInputStream(ze);
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    fs.CopyTo(ms);
-                    ms.Position=0;
-                    scenarioAudio[soundNum] = WavUtility.ToAudioClip(Mp3ToWav(ms));
-                    sFileName[soundNum] = path;
-                    soundNum++;
-                }
-                }
             }
             else
             {
@@ -999,19 +987,23 @@ public class ScenariosceneManager : MonoBehaviour
                     soundNum++;
                 }
             }
+        }
+        catch
+        {
             zf.Close();
-        //}
-        //catch
-        //{
-        //    GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
-        //}
+            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
+        }
     }
 
     private void Mp3ToWav(string infile,string outfile)
     {
         using (var reader = new NAudio.Wave.Mp3FileReader(infile, wf => new NLayer.NAudioSupport.Mp3FrameDecompressor(wf)))
         {
-            NAudio.Wave.WaveFileWriter.CreateWaveFile(outfile, reader);
+            
+            NAudio.Wave.WaveFloatTo16Provider w32to16 = new NAudio.Wave.WaveFloatTo16Provider(reader);
+            byte[] tmp = new byte[10000];
+            w32to16.Read(tmp, 0, 10000);
+            NAudio.Wave.WaveFileWriter.CreateWaveFile(outfile, w32to16);              
         }
     }
 
@@ -1148,7 +1140,10 @@ public class ScenariosceneManager : MonoBehaviour
             texture.LoadImage(readBinary);
 
             //同名ファイルが既にzipに入っていれば上書き
-            if (Array.IndexOf(gFileName, Path.GetFileName(path)) >= 0) { scenarioGraphic[Array.IndexOf(gFileName, Path.GetFileName(path))] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f)); gFileName[Array.IndexOf(gFileName, Path.GetFileName(path))] = path; yield break; }
+            for (int i = 0; i < gFileName.Length; i++)
+            {
+                if (gFileName[i] == Path.GetFileName(path)) { scenarioGraphic[i] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f)); gFileName[i] = path; yield break; }
+            }
 
             //空要素があればそこに代入。
             for (int j = 0; j < scenarioGraphic.Length - 1; j++)
@@ -1180,8 +1175,10 @@ public class ScenariosceneManager : MonoBehaviour
             texture.LoadImage(readBinary);
 
             //同名ファイルが既にzipに入っていれば上書き
-            if (Array.IndexOf(gFileName, Path.GetFileName(path)) >= 0) { scenarioGraphic[Array.IndexOf(gFileName, Path.GetFileName(path))] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f)); gFileName[Array.IndexOf(gFileName, Path.GetFileName(path))] = path; yield break; }
-
+            for (int i = 0; i < gFileName.Length;i++)
+            {
+                if (gFileName[i]== Path.GetFileName(path)) { scenarioGraphic[i] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f)); gFileName[i] = path; yield break; }
+            }
             //空要素があればそこに代入。
             for (int j = 0; j < scenarioGraphic.Length - 1; j++)
             {
@@ -1201,54 +1198,66 @@ public class ScenariosceneManager : MonoBehaviour
 
         }
 
-
-
         //wavファイルの場合
         if (path.Substring(path.Length - 4) == ".wav" || path.Substring(path.Length - 4) == ".WAV")
         {
             byte[] readBinary = ReadFile(path);
-           yield return StartCoroutine(LoadBGM(readBinary, path));
+           StartCoroutine(LoadBGM(readBinary, path));
         }
         //mp3ファイルの場合
         if (path.Substring(path.Length - 4) == ".mp3" || path.Substring(path.Length - 4) == ".MP3")
         {
-           //byte[] readBinary= ReadFile(path);
-           //yield return StartCoroutine(LoadMP3(readBinary, path));
+            string fc = objBGM.GetComponent<BGMManager>().folderChar;
+            string cache = path.Substring(0,path.Length - 4) + ".wav";
+                Mp3ToWav(path,cache);
+            try { File.Delete(path); } catch { }
+            StartCoroutine(LoadFile(cache));
+            /*
+            byte[] readBinary = ReadFile(path);
+            using (MemoryStream ms = new MemoryStream(readBinary))
+            {
+                ms.Position = 0;
+                byte[] tmp = Mp3ToWav(ms);
+                StartCoroutine(LoadBGM(tmp, cache));
+            }
+            */
+
         }
 
         yield return null;
     }
-
-    private IEnumerator LoadMP3(byte[] buffer,string path)
-    {
-        yield return null;
-    }
+    
 
     private IEnumerator LoadBGM(byte[] buffer, string path)
     {
-        if (Array.IndexOf(sFileName, Path.GetFileName(path)) >= 0)
+        for (int i = 0; i < sFileName.Length; i++)
         {
-            scenarioAudio[Array.IndexOf(sFileName, Path.GetFileName(path))] = WavUtility.ToAudioClip(buffer);
-            while (scenarioAudio[Array.IndexOf(sFileName, Path.GetFileName(path))].loadState == AudioDataLoadState.Loading)
+            if (sFileName[i] == Path.GetFileName(path))
             {
-                // ロードが終わるまで待つ
-                yield return new WaitForEndOfFrame();
-            }
+                sFileName[i] = path;
+                scenarioAudio[i] = WavUtility.ToAudioClip(buffer);
+                while (scenarioAudio[i].loadState == AudioDataLoadState.Loading)
+                {
+                    // ロードが終わるまで待つ
+                    yield return new WaitForEndOfFrame();
+                }
 
-            if (scenarioAudio[Array.IndexOf(sFileName, Path.GetFileName(path))].loadState != AudioDataLoadState.Loaded)
-            {
-                // 読み込み失敗
-                Debug.Log("Failed to Load!");
+                if (scenarioAudio[i].loadState != AudioDataLoadState.Loaded)
+                {
+                    // 読み込み失敗
+                    Debug.Log("Failed to Load!");
+                    yield break;
+                }
                 yield break;
             }
-            sFileName[Array.IndexOf(sFileName, Path.GetFileName(path))] = path;
-            yield break;
         }
+
         //空要素があればそこに代入
         for (int j = 0; j < scenarioAudio.Length; j++)
         {
             if (scenarioAudio[j] == null)
             {
+                sFileName[j] = path;
                 scenarioAudio[j] = WavUtility.ToAudioClip(buffer);
                 while (scenarioAudio[j].loadState == AudioDataLoadState.Loading)
                 {
@@ -1262,7 +1271,6 @@ public class ScenariosceneManager : MonoBehaviour
                     Debug.Log("Failed to Load!");
                     yield break;
                 }
-                sFileName[j] = path;
                 yield break;
             }
         }
@@ -1790,5 +1798,15 @@ public class ScenariosceneManager : MonoBehaviour
         SaveCommandFile();
         GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "MapScene");
     }
+
+    public static DirectoryInfo SafeCreateDirectory(string path)
+    {
+        if (Directory.Exists(path))
+        {
+            return null;
+        }
+        return Directory.CreateDirectory(path);
+    }
+
 
 }
