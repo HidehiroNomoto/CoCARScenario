@@ -15,9 +15,9 @@ public class MapScene : MonoBehaviour
     private double longitudeMap;
     private double latitudeMap;
     private int zoom = 16;
-    private float targetX=0;
-    private float targetY=0;
-    public List<string> mapData=new List<string>();
+    private float targetX = 0;
+    private float targetY = 0;
+    public List<string> mapData = new List<string>();
     private bool sceneChange = false;
     GameObject mapImageObj;
     public GameObject objIvent;
@@ -26,13 +26,13 @@ public class MapScene : MonoBehaviour
     GameObject parentObject;
     public int selectNum = -1;
     string _FILE_HEADER;
-    public InputField[] inputField=new InputField[14];
+    public InputField[] inputField = new InputField[14];
     public AudioClip errorSE;
     public GameObject FirstPlace;
     public GameObject IventMake;
-    public int selectBefore=-1;
+    public int selectBefore = -1;
     public List<int> multiSelect = new List<int>();
-    public bool URBool=false;
+    public bool URBool = false;
     public List<string> undoList = new List<string>();
     private int undoListNum = 0;
     private bool copyBool = false;
@@ -45,10 +45,10 @@ public class MapScene : MonoBehaviour
     void Start()
     {
         parentObject = GameObject.Find("Content");
-        _FILE_HEADER = PlayerPrefs.GetString("進行中シナリオ","");                      //ファイル場所の頭
-        longitude=PlayerPrefs.GetFloat("longitude",135.768738f); latitude = PlayerPrefs.GetFloat("latitude", 35.010348f);
+        _FILE_HEADER = PlayerPrefs.GetString("進行中シナリオ", "");                      //ファイル場所の頭
+        longitude = PlayerPrefs.GetFloat("longitude", 135.768738f); latitude = PlayerPrefs.GetFloat("latitude", 35.010348f);
         mapImageObj = GameObject.Find("mapImage").gameObject as GameObject;
-        objBGM= GameObject.Find("BGMManager").gameObject as GameObject;
+        objBGM = GameObject.Find("BGMManager").gameObject as GameObject;
         LoadMapData("[system]mapdata[system].txt");
         GetMap();
         //フォントの表示バグを修正するための処理（Unity固有のもの）
@@ -69,7 +69,7 @@ public class MapScene : MonoBehaviour
         if (time % 36000 == 0) { System.IO.File.Copy(PlayerPrefs.GetString("進行中シナリオ", ""), "BackUp.zip", true); }
         time++;
         for (int x = 0; x < inputField.Length; x++) { if (inputField[x].isFocused) { textFlag = true; } }
-        if (textFlag==false && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
+        if (textFlag == false && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
         {
             if (Input.GetKey(KeyCode.Z))
             {
@@ -88,7 +88,7 @@ public class MapScene : MonoBehaviour
         {
             URBool = false;
         }
-        if (textFlag==false && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
+        if (textFlag == false && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
         {
             if (Input.GetKey(KeyCode.C))
             {
@@ -165,22 +165,22 @@ public class MapScene : MonoBehaviour
 
     private IEnumerator GetStreetViewImage(double latitude, double longitude, double zoom)
     {
-        string url="";
+        string url = "";
         if (Application.platform == RuntimePlatform.IPhonePlayer) { url = "http://maps.googleapis.com/maps/api/staticmap?center=" + latitude + "," + longitude + "&zoom=" + zoom + "&size=" + width + "x" + height + Secret.SecretString.iPhoneKey; }
         if (Application.platform == RuntimePlatform.Android) { url = "http://maps.googleapis.com/maps/api/staticmap?center=" + latitude + "," + longitude + "&zoom=" + zoom + "&size=" + width + "x" + height + Secret.SecretString.androidKey; }
-        if(Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer) { url = "http://maps.googleapis.com/maps/api/staticmap?center=" + latitude + "," + longitude + "&zoom=" + zoom + "&size=" + width + "x" + height + Secret.SecretString.androidKey; ; }
+        if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer) { url = "http://maps.googleapis.com/maps/api/staticmap?center=" + latitude + "," + longitude + "&zoom=" + zoom + "&size=" + width + "x" + height + Secret.SecretString.androidKey; ; }
         WWW www = new WWW(url);
         yield return www;
         //マップの画像をTextureからspriteに変換して貼り付ける
         mapImage = Sprite.Create(www.texture, new Rect(0, 0, 640, 640), Vector2.zero);
-        mapImageObj.GetComponent<Image>().sprite=mapImage;
+        mapImageObj.GetComponent<Image>().sprite = mapImage;
 
         //地図の中心の緯度経度を保存
         longitudeMap = longitude;
         latitudeMap = latitude;
 
         //targetの位置を中心に
-        targetX = 0;targetY = 0;
+        targetX = 0; targetY = 0;
     }
 
     //目次ファイルを読み込む。
@@ -190,15 +190,15 @@ public class MapScene : MonoBehaviour
         //string[] strs;
         try
         {
-        //閲覧するエントリ
-        string extractFile = path;
+            //閲覧するエントリ
+            string extractFile = path;
 
-        //ZipFileオブジェクトの作成
-        ICSharpCode.SharpZipLib.Zip.ZipFile zf =
-            new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ",""));
-        zf.Password = Secret.SecretString.zipPass;
-        //展開するエントリを探す
-        ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(extractFile);
+            //ZipFileオブジェクトの作成
+            ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+                new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
+            zf.Password = Secret.SecretString.zipPass;
+            //展開するエントリを探す
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(extractFile);
 
             try
             {
@@ -225,7 +225,7 @@ public class MapScene : MonoBehaviour
                         objIB[i].transform.SetParent(parentObject.transform, false);
                         objIB[i].GetComponentInChildren<Text>().text = MapDataToButton(mapData[i]);
                         objIB[i].GetComponent<IventButton>().buttonNum = i;
-                        ScenarioFileCheck(i,zf);
+                        ScenarioFileCheck(i, zf);
                     }
                 }
                 else
@@ -233,7 +233,7 @@ public class MapScene : MonoBehaviour
                     GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "TitleScene");
                 }
             }
-            catch{ }
+            catch { }
 
             ze = zf.GetEntry("[system]command1[system]PC版スタート地点[system].txt");
             /*
@@ -262,8 +262,8 @@ public class MapScene : MonoBehaviour
             catch { }
             */
 
-        //閉じる
-        zf.Close();
+            //閉じる
+            zf.Close();
 
             str2 = "";
             for (int i = 0; i < mapData.Count; i++) { if (mapData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str2 = str2 + mapData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
@@ -313,7 +313,7 @@ public class MapScene : MonoBehaviour
             for (int i = selectNum; i < objIB.Count; i++) { objIB[i].GetComponent<IventButton>().buttonNum--; }//削除分の後ろはボタン番号が１減る。
             if (mapData.Count - 1 >= selectNum) { mapData.RemoveAt(selectNum); }
             for (int k = 0; k < multiSelect.Count; k++) { if (selectNum < multiSelect[k]) { multiSelect[k]--; } }
-            for (int j=0;j<multiSelect.Count;j++)
+            for (int j = 0; j < multiSelect.Count; j++)
             {
                 Destroy(objIB[multiSelect[j]]);
                 objIB.RemoveAt(multiSelect[j]);
@@ -331,7 +331,7 @@ public class MapScene : MonoBehaviour
         }
         else
         {
-            if (selectNum == 0) { GameObject.Find("Error").GetComponent<Text>().text ="スタート地点設定イベントは消去できません。"; }
+            if (selectNum == 0) { GameObject.Find("Error").GetComponent<Text>().text = "スタート地点設定イベントは消去できません。"; }
             if (selectNum < 0) { GameObject.Find("Error").GetComponent<Text>().text = "イベントが選択されていません。"; }
             AudioSource bgm = GameObject.Find("BGMManager").GetComponent<AudioSource>(); bgm.loop = false; bgm.clip = errorSE; bgm.Play();
             StartCoroutine(ErrorWait());
@@ -381,9 +381,9 @@ public class MapScene : MonoBehaviour
             {
                 FirstPlace.SetActive(false);
                 IventMake.SetActive(true);
-                strs = mapData[selectNum].Replace("\r","").Replace("\n","").Split(',');
+                strs = mapData[selectNum].Replace("\r", "").Replace("\n", "").Split(',');
                 if (strs[10].Contains(" [system]任意イベント")) { PLIventToggle.GetComponent<Toggle>().isOn = true; strs[10] = strs[10].Replace(" [system]任意イベント", ""); } else { PLIventToggle.GetComponent<Toggle>().isOn = false; }
-                inputField[0].text = strs[11].Substring(0, strs[11].Length - 4).Replace("[system]","");
+                inputField[0].text = strs[11].Substring(0, strs[11].Length - 4).Replace("[system]", "");
                 inputField[1].text = strs[0];
                 inputField[2].text = strs[1];
                 inputField[3].text = strs[2];
@@ -401,39 +401,39 @@ public class MapScene : MonoBehaviour
             {
                 FirstPlace.SetActive(true);
                 IventMake.SetActive(false);
-                    //閲覧するエントリ
-                    string extractFile = "[system]command1[system]PC版スタート地点[system].txt";
+                //閲覧するエントリ
+                string extractFile = "[system]command1[system]PC版スタート地点[system].txt";
 
-                    //ZipFileオブジェクトの作成
-                    ICSharpCode.SharpZipLib.Zip.ZipFile zf =
-                        new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
-                    zf.Password = Secret.SecretString.zipPass;
-                    //展開するエントリを探す
-                    ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(extractFile);
+                //ZipFileオブジェクトの作成
+                ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+                    new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
+                zf.Password = Secret.SecretString.zipPass;
+                //展開するエントリを探す
+                ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(extractFile);
 
-                        if (ze != null)
-                        {
-                            //閲覧するZIPエントリのStreamを取得
-                            System.IO.Stream reader = zf.GetInputStream(ze);
-                            //文字コードを指定してStreamReaderを作成
-                            System.IO.StreamReader sr = new System.IO.StreamReader(
-                                reader, System.Text.Encoding.GetEncoding("UTF-8"));
-                            // テキストを取り出す
-                            string text = sr.ReadToEnd();
+                if (ze != null)
+                {
+                    //閲覧するZIPエントリのStreamを取得
+                    System.IO.Stream reader = zf.GetInputStream(ze);
+                    //文字コードを指定してStreamReaderを作成
+                    System.IO.StreamReader sr = new System.IO.StreamReader(
+                        reader, System.Text.Encoding.GetEncoding("UTF-8"));
+                    // テキストを取り出す
+                    string text = sr.ReadToEnd();
 
-                            // 読み込んだ目次テキストファイルからstring配列を作成する
-                            strs=text.Split('\n');
-                    strs = strs[1].Substring(12).Replace("\r","").Replace("\n","").Split(',');
-                            //閉じる
-                            sr.Close();
-                            reader.Close();
+                    // 読み込んだ目次テキストファイルからstring配列を作成する
+                    strs = text.Split('\n');
+                    strs = strs[1].Substring(12).Replace("\r", "").Replace("\n", "").Split(',');
+                    //閉じる
+                    sr.Close();
+                    reader.Close();
 
                     mapData[selectNum] = ",,,,,,,,,,,[system]PC版スタート地点[system].txt";
                 }
-                        else
-                        {
+                else
+                {
                     strs = new string[2];
-                            strs[0] = "35.010348"; strs[1] = "135.768738";
+                    strs[0] = "35.010348"; strs[1] = "135.768738";
                     mapData[selectNum] = ",,,,,,,,,,,[system]PC版スタート地点[system].txt";
                 }
 
@@ -455,7 +455,7 @@ public class MapScene : MonoBehaviour
     {
         string str3;
         string PLIvent = "";
-   
+
         try
         {
             if (inputField[0].text.Contains("[system]")) { GameObject.Find("Error").GetComponent<Text>().text = "「<color=red>[system]</color>」という文字列は使用禁止です。(システム処理の識別語にしています)"; StartCoroutine(ErrorWait()); return; }
@@ -473,10 +473,10 @@ public class MapScene : MonoBehaviour
                 zf.Password = Secret.SecretString.zipPass;
                 ScenarioFileCheck(selectNum, zf);
                 zf.Close();
-            if (inputField[1].text != "" && inputField[2].text != "")
-            {
-                latitude = Convert.ToDouble(inputField[1].text); longitude = Convert.ToDouble(inputField[2].text);
-            }
+                if (inputField[1].text != "" && inputField[2].text != "")
+                {
+                    latitude = Convert.ToDouble(inputField[1].text); longitude = Convert.ToDouble(inputField[2].text);
+                }
                 str3 = "";
                 for (int i = 0; i < mapData.Count; i++) { if (mapData[i].Replace("\n", "").Replace("\r", "") == "") { continue; } str3 = str3 + mapData[i].Replace("\n", "").Replace("\r", "") + "\r\n"; }
                 undoList.Add(str3);
@@ -486,8 +486,8 @@ public class MapScene : MonoBehaviour
             {
                 //座標を突っ込むだけのイベントファイルを作成。内容は座標設定→マップワンス
                 string str = "";//イベントファイルの１行目はファイル名入れない
-                string str2= "[system]command1[system]PC版スタート地点[system].txt\r\n";//一行目はファイル名を示す部分。
-                                                          //ZIP書庫のパス
+                string str2 = "[system]command1[system]PC版スタート地点[system].txt\r\n";//一行目はファイル名を示す部分。
+                                                                                  //ZIP書庫のパス
                 string zipPath = PlayerPrefs.GetString("進行中シナリオ", "");
                 //書庫に追加するファイルのパス
                 string file = @GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + @"[system]PC版スタート地点[system].txt";
@@ -508,7 +508,7 @@ public class MapScene : MonoBehaviour
 
                 //ZIP内のエントリの名前を決定する 
                 string f = System.IO.Path.GetFileName(file);
-                string f2= System.IO.Path.GetFileName(file2);
+                string f2 = System.IO.Path.GetFileName(file2);
                 //ZIP書庫に一時的に書きだしておいたファイルを追加する
                 zf.Add(file, f);
                 zf.Add(file2, f2);
@@ -552,8 +552,8 @@ public class MapScene : MonoBehaviour
         string[] strs;
         try
         {
-            strs = mapdata.Replace("\r", "").Replace("\n", "").Replace("[system]","").Split(',');
-            if (strs[11].Length>4) { strs[11] = strs[11].Substring(0,strs[11].Length-4); }
+            strs = mapdata.Replace("\r", "").Replace("\n", "").Replace("[system]", "").Split(',');
+            if (strs[11].Length > 4) { strs[11] = strs[11].Substring(0, strs[11].Length - 4); }
             if (strs[0].Length > 0) { strs[0] = " 緯:" + strs[0]; }
             if (strs[1].Length > 0) { strs[1] = " 経:" + strs[1]; }
             if (strs[2].Length > 0) { strs[2] = " " + strs[2] + "月"; }
@@ -562,11 +562,11 @@ public class MapScene : MonoBehaviour
             if (strs[5].Length > 0) { strs[5] = strs[5] + "分"; }
             if (strs[6].Length > 0) { strs[6] = "～" + strs[6] + "月"; }
             if (strs[7].Length > 0) { strs[7] = strs[7] + "日"; }
-            if (strs[8].Length > 0) { strs[8] = strs[8] +"時"; }
+            if (strs[8].Length > 0) { strs[8] = strs[8] + "時"; }
             if (strs[9].Length > 0) { strs[9] = strs[9] + "分"; }
             if (strs[10].Length > 0) { strs[10] = " " + strs[10]; }
             return strs[11] + strs[0] + strs[1] + strs[2] + strs[3] + strs[4] + strs[5] + strs[6] + strs[7] + strs[8] + strs[9] + strs[10];
-                }
+        }
         catch
         {
             return "";
@@ -606,7 +606,7 @@ public class MapScene : MonoBehaviour
 
 
             //以下、不使用データの削除処理
-            ICSharpCode.SharpZipLib.Zip.ZipEntry ze= zf.GetEntry("[system]mapdata[system].txt");
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry("[system]mapdata[system].txt");
             tmpList.Clear();
             FileSearchLoop(ze, zf);
 
@@ -713,21 +713,21 @@ public class MapScene : MonoBehaviour
         objBGM.GetComponent<BGMManager>().copyMapString = str;
     }
 
-    private List<string> CopyMake(string[] strs2,List<string> strList)
+    private List<string> CopyMake(string[] strs2, List<string> strList)
     {
         string str;
         string[] strs;
-        List<string> strs3=new List<string>();
+        List<string> strs3 = new List<string>();
         for (int j = 0; j < strs2.Length; j++)
         {
             str = strs2[j];
             strs = str.Replace("\r", "").Replace("\n", "").Split(',');
-            
-                //ファイル名をチェックして同名にならないcopy番号を取得(pastebuttonとcopynumで処理を統一しないのは、複数個コピーの際にここだけ別ループにありcopynumを正しく反映できないから)
-                for (int k = 0; k < 9999; k++) {for(int x=0;x<strList.Count;x++){ if (strList[x].Contains(strs[11].Substring(0,strs[11].Length-4) + "copy" + k.ToString() + ".txt")) { break; } if (x ==strList.Count-1) {  strs[11] = strs[11].Substring(0,strs[11].Length-4) + "copy" + k.ToString() + ".txt"; goto e3;} } }
-                e3:
-                for (int i = 0; i < 11; i++) { strs[i] = strs[i] + ","; }
-                strs3.Add(strs[0] + strs[1] + strs[2] + strs[3] + strs[4] + strs[5] + strs[6] + strs[7] + strs[8] + strs[9] + strs[10] + strs[11]);        
+
+            //ファイル名をチェックして同名にならないcopy番号を取得(pastebuttonとcopynumで処理を統一しないのは、複数個コピーの際にここだけ別ループにありcopynumを正しく反映できないから)
+            for (int k = 0; k < 9999; k++) { for (int x = 0; x < strList.Count; x++) { if (strList[x].Contains(strs[11].Substring(0, strs[11].Length - 4) + "copy" + k.ToString() + ".txt")) { break; } if (x == strList.Count - 1) { strs[11] = strs[11].Substring(0, strs[11].Length - 4) + "copy" + k.ToString() + ".txt"; goto e3; } } }
+            e3:
+            for (int i = 0; i < 11; i++) { strs[i] = strs[i] + ","; }
+            strs3.Add(strs[0] + strs[1] + strs[2] + strs[3] + strs[4] + strs[5] + strs[6] + strs[7] + strs[8] + strs[9] + strs[10] + strs[11]);
         }
         return strs3;
     }
@@ -764,7 +764,7 @@ public class MapScene : MonoBehaviour
         {
             string[] strs2;
             strs2 = strs[j].Split(',');
-            copyfile=strs2[11].Replace("\r", "").Replace("\n", "");
+            copyfile = strs2[11].Replace("\r", "").Replace("\n", "");
             try
             {
                 ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(copyfile);
@@ -836,7 +836,6 @@ public class MapScene : MonoBehaviour
         MakeMapDataFile();
     }
 
-
     public void ScenarioFileCheck(int num, ICSharpCode.SharpZipLib.Zip.ZipFile zf)
     {
         string[] strs;
@@ -853,6 +852,11 @@ public class MapScene : MonoBehaviour
             }
         }
         catch { }
+    }
+
+    public void MapPageJumpButton()
+    {
+        Application.OpenURL("http://user.numazu-ct.ac.jp/~tsato/webmap/sphere/coordinates/yahoo_olp/?lat=35.692&lon=139.691&z=9");
     }
 }
 

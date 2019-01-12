@@ -859,7 +859,7 @@ public class ScenariosceneManager : MonoBehaviour
         }
         else
         {
-            dataFolderPath=@GetComponent<Utility>().GetAppPath().Substring(0, @GetComponent<Utility>().GetAppPath().Length - 25) + @"/シナリオに使うpngやwavを入れるフォルダ";
+            dataFolderPath=@GetComponent<Utility>().GetAppPath().Substring(0, @GetComponent<Utility>().GetAppPath().Length - 37) + @"/シナリオに使うpngやwavを入れるフォルダ";
         }
         graphicNum = 0; soundNum = 0;
         List<string> tmp = LoadIventData(objBGM.GetComponent<BGMManager>().chapterName);
