@@ -50,6 +50,9 @@ public class MapScene : MonoBehaviour
         mapImageObj = GameObject.Find("mapImage").gameObject as GameObject;
         objBGM = GameObject.Find("BGMManager").gameObject as GameObject;
         LoadMapData("[system]mapdata[system].txt");
+        try {
+            GetStartPoint();
+        } catch { }
         GetMap();
         //フォントの表示バグを修正するための処理（Unity固有のもの）
         Font.textureRebuilt += CallBackReMakeTextObject;
@@ -107,6 +110,46 @@ public class MapScene : MonoBehaviour
         {
             copyBool = false;
         }
+    }
+
+    public void GetStartPoint()
+    {
+        string[] strs;
+        //閲覧するエントリ
+        string extractFile = "[system]command1[system]PC版スタート地点[system].txt";
+
+        //ZipFileオブジェクトの作成
+        ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+            new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
+        zf.Password = Secret.SecretString.zipPass;
+        //展開するエントリを探す
+        ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(extractFile);
+
+        if (ze != null)
+        {
+            //閲覧するZIPエントリのStreamを取得
+            System.IO.Stream reader = zf.GetInputStream(ze);
+            //文字コードを指定してStreamReaderを作成
+            System.IO.StreamReader sr = new System.IO.StreamReader(
+                reader, System.Text.Encoding.GetEncoding("UTF-8"));
+            // テキストを取り出す
+            string text = sr.ReadToEnd();
+
+            // 読み込んだ目次テキストファイルからstring配列を作成する
+            strs = text.Split('\n');
+            strs = strs[1].Substring(12).Replace("\r", "").Replace("\n", "").Split(',');
+            //閉じる
+            sr.Close();
+            reader.Close();
+        }
+        else
+        {
+            strs = new string[2];
+            strs[0] = "35.010348"; strs[1] = "135.768738";
+        }
+        //閉じる
+        zf.Close();
+        latitude = Convert.ToDouble(strs[0]); longitude = Convert.ToDouble(strs[1]);
     }
 
     public void UndoRedoButton(bool undoFlag)
@@ -856,7 +899,7 @@ public class MapScene : MonoBehaviour
 
     public void MapPageJumpButton()
     {
-        Application.OpenURL("http://user.numazu-ct.ac.jp/~tsato/webmap/sphere/coordinates/yahoo_olp/?lat=35.692&lon=139.691&z=9");
+        Application.OpenURL("http://user.numazu-ct.ac.jp/~tsato/webmap/sphere/coordinates/yahoo_olp/?lat=" + latitude.ToString() + "&lon=" + longitude.ToString() + "&z=18");
     }
 }
 

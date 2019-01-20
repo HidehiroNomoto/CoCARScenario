@@ -504,7 +504,7 @@ public class ScenariosceneManager : MonoBehaviour
         objBGM.GetComponent<BGMManager>().chapterName = tmp1;
         commandName = tmp3;
         GameObject.Find("CNameField").GetComponent<RectTransform>().localPosition = new Vector2(-800, 50);
-        titleText.GetComponent<Text>().text = tmp3.Replace(tmp1, "").Replace("[system]", "[コマンド]") + "\n" + tmp1.Replace("[system]", "[イベント]");
+        titleText.GetComponent<Text>().text = tmp3.Replace(tmp1, "").Replace("[system]", "[コマンド]") + "\n" + tmp1.Substring(0,tmp1.Length-4).Replace("[system]", "[イベント]");
         GameObject.Find("InputZone").GetComponent<RectTransform>().localPosition = new Vector2(0, -200);
         NCBFlag = false;
     }

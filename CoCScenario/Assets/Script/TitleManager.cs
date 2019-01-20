@@ -15,6 +15,7 @@ public class TitleManager : MonoBehaviour {
     public GameObject objBGM;
     IEnumerator routine=null;
 
+    //Macビルド時、フォルダ名は『iOS』に。
     // Use this for initialization
     void Start()
     {
@@ -36,13 +37,17 @@ Application.platform == RuntimePlatform.LinuxPlayer)
         DontDestroyOnLoad(objBGM);//BGMマネージャーのオブジェクトはタイトル画面で作ってゲーム終了までそれを使用。
         objBGM.GetComponent<AudioSource>().volume = PlayerPrefs.GetFloat("BGMVolume", 0.8f);
         objBGM.GetComponent<BGMManager>().bgmChange(true, 0);//BGMManager内部変数の初期化
-        if (Application.platform == RuntimePlatform.OSXPlayer && @GetComponent<Utility>().GetAppPath().Substring(0,10).Contains("private"))
+
+        if (@GetComponent<Utility>().GetAppPath().Length > 10)
         {
-        GameObject.Find("CoCSM").GetComponent<Text>().text = "";
-        GameObject.Find("AR").GetComponent<Text>().text = "";
-            GameObject.Find("error").GetComponent<Text>().text = "[error]OSの仕様により不具合が発生しています。\n\n[解決方法]一度アプリを閉じてから、アプリファイル本体を一度デスクトップに移し、その後フォルダに戻してください。";
-            startObj.SetActive(false);
-            selectObj.SetActive(false);
+            if (Application.platform == RuntimePlatform.OSXPlayer && @GetComponent<Utility>().GetAppPath().Substring(0, 10).Contains("private"))
+            {
+                GameObject.Find("CoCSM").GetComponent<Text>().text = "";
+                GameObject.Find("AR").GetComponent<Text>().text = "";
+                GameObject.Find("error").GetComponent<Text>().text = "[error]OSの仕様により不具合が発生しています。\n\n[解決方法]一度アプリを閉じてから、アプリファイル本体を一度デスクトップに移し、その後フォルダに戻してください。";
+                startObj.SetActive(false);
+                selectObj.SetActive(false);
+            }
         }
     }
 
@@ -78,7 +83,6 @@ Application.platform == RuntimePlatform.LinuxPlayer)
         {
             dataFolderPath = @GetComponent<Utility>().GetAppPath().Substring(0, @GetComponent<Utility>().GetAppPath().Length - 37) + objBGM.GetComponent<BGMManager>().folderChar + scenarioName + ".zip";
         }
-        if (Application.platform == RuntimePlatform.OSXPlayer && dataFolderPath.Contains("private")) { dataFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + objBGM.GetComponent<BGMManager>().folderChar + scenarioName + ".zip"; }
         ZipMake(dataFolderPath, scenarioPass);
         PlayerPrefs.SetString("進行中シナリオ",dataFolderPath);
         GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "MapScene");
