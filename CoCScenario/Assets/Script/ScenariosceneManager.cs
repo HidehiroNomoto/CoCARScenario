@@ -64,6 +64,9 @@ public class ScenariosceneManager : MonoBehaviour
     public int fallNum = 0;
     private string dataFolderPath = "";
     public AudioClip mp3Dammy;
+    public GameObject[] objBox=new GameObject[4];
+    public GameObject objInput;
+    public GameObject objBlackOut;
 
     // Use this for initialization
     void Start()
@@ -538,11 +541,29 @@ public class ScenariosceneManager : MonoBehaviour
             if (separate[0].Length > 6 && separate[0].Substring(0, 6) == "Chara:") { CharacterDraw(int.Parse(separate[0].Substring(6)), int.Parse(separate[1].Replace("\r", "").Replace("\n", ""))); backGraphLogTemp[int.Parse(separate[1])] = int.Parse(separate[0].Substring(6)); }
             if (separate[0].Length > 5 && separate[0].Substring(0, 5) == "Back:") { BackDraw(int.Parse(separate[0].Substring(5).Replace("\r", "").Replace("\n", ""))); backGraphLogTemp[0] = int.Parse(separate[0].Substring(5).Replace("\r", "").Replace("\n", "")); }
             if (separate[0].Length > 7 && separate[0].Substring(0, 7) == "Battle:") { for (int j = 1; j <= 5; j++) { CharacterDraw(-1, j); backGraphLogTemp[j] = -1; } }
+            if (separate[0].Length > 7 && separate[0].Substring(0, 7) == "Select:")
+            {
+                string[] buttonText = commandData[i].Substring(7).Split(','); string choiceA = buttonText[0];string choiceB = buttonText[1];string choiceC = buttonText[2];string choiceD=buttonText[3].Replace("\r", "").Replace("\n", "");
+                objBox[0].gameObject.SetActive(true); objBox[0].GetComponentInChildren<Text>().text = choiceA;
+                if (choiceB.Length > 0) { objBox[1].gameObject.SetActive(true); objBox[1].GetComponentInChildren<Text>().text = choiceB; }
+                if (choiceC.Length > 0) { objBox[2].gameObject.SetActive(true); objBox[2].GetComponentInChildren<Text>().text = choiceC; }
+                if (choiceD.Length > 0) { objBox[3].gameObject.SetActive(true); objBox[3].GetComponentInChildren<Text>().text = choiceD; }
+                SelectBoxMake(choiceA.Length, choiceB.Length, choiceC.Length, choiceD.Length);
+            } else {
+                for (int j = 0; j < 4; j++) { objBox[j].gameObject.SetActive(false); }
+            }
+            if (separate[0].Length > 6 && separate[0].Substring(0, 6) == "Input:") { objInput.SetActive(true); objBox[0].gameObject.SetActive(true);objBox[0].GetComponentInChildren<Text>().text = "決定"; objBox[0].GetComponent<RectTransform>().localPosition = new Vector3(0, 50, 0); objBox[0].GetComponent<RectTransform>().sizeDelta = new Vector2(660, 100);} else { objInput.SetActive(false); }
+            if (separate[0].Length > 9 && separate[0].Substring(0, 9) == "BlackOut:") { objBlackOut.SetActive(true);objBlackOut.GetComponent<Image>().color = new Color(float.Parse(separate[0].Substring(9))/255,float.Parse(separate[1])/255,float.Parse(separate[2])/255); } else { objBlackOut.SetActive(false); }
         }
     }
 
-
-
+    private void SelectBoxMake(int choiceA,int choiceB,int choiceC,int choiceD)
+    {
+        if (choiceA > 0 && choiceB > 0 && choiceC > 0 && choiceD > 0) { objBox[0].GetComponent<RectTransform>().localPosition = new Vector3(0, 500, 0); objBox[1].GetComponent<RectTransform>().localPosition = new Vector3(0, 350, 0); objBox[2].GetComponent<RectTransform>().localPosition = new Vector3(0, 200, 0); objBox[3].GetComponent<RectTransform>().localPosition = new Vector3(0, 50, 0); for (int i = 0; i < 4; i++) { objBox[i].GetComponent<RectTransform>().sizeDelta = new Vector2(660, 100); } }
+        if (choiceA > 0 && choiceB > 0 && choiceC > 0 && choiceD == 0) { objBox[0].GetComponent<RectTransform>().localPosition = new Vector3(0, 350, 0); objBox[1].GetComponent<RectTransform>().localPosition = new Vector3(0, 200, 0); objBox[2].GetComponent<RectTransform>().localPosition = new Vector3(0, 50, 0); for (int i = 0; i < 3; i++) { objBox[i].GetComponent<RectTransform>().sizeDelta = new Vector2(660, 100); } }
+        if (choiceA > 0 && choiceB > 0 && choiceC == 0 && choiceD == 0) { objBox[0].GetComponent<RectTransform>().localPosition = new Vector3(0, 350, 0); objBox[1].GetComponent<RectTransform>().localPosition = new Vector3(0, 200, 0); for (int i = 0; i < 2; i++) { objBox[i].GetComponent<RectTransform>().sizeDelta = new Vector2(660, 100); } }
+        if (choiceA > 0 && choiceB == 0 && choiceC == 0 && choiceD == 0) { objBox[0].GetComponent<RectTransform>().localPosition = new Vector3(0, 200, 0); for (int i = 0; i < 1; i++) { objBox[i].GetComponent<RectTransform>().sizeDelta = new Vector2(660, 100); } }
+    }
 
     public void SelectReset()
     {
@@ -883,7 +904,8 @@ public class ScenariosceneManager : MonoBehaviour
         }
         catch
         {
-            GameObject.Find("Error").GetComponent<Text>().text = "『シナリオに使うpngやwavを入れるフォルダ』がありません。";
+            SafeCreateDirectory("シナリオに使うpngやwavを入れるフォルダ");
+            //GameObject.Find("Error").GetComponent<Text>().text = "『シナリオに使うpngやwavを入れるフォルダ』がありません。";
         }
         LoadCommandData("[system]command1" + objBGM.GetComponent<BGMManager>().chapterName);
     }
