@@ -8,13 +8,13 @@ public class MapScene : MonoBehaviour
 {
     Sprite mapImage;
     private float intervalTime = 0.0f;
-    private int width = 640;
-    private int height = 640;
-    private double longitude;
-    private double latitude;
+    private int width = 2000;
+    private int height = 2000;
+    public double longitude;
+    public double latitude;
     private double longitudeMap;
     private double latitudeMap;
-    private int zoom = 16;
+    public int zoom = 16;
     private float targetX = 0;
     private float targetY = 0;
     public List<string> mapData = new List<string>();
@@ -41,6 +41,7 @@ public class MapScene : MonoBehaviour
     public int fallNum = 0;
     private int copynum = 0;
     public GameObject PLIventToggle;
+    public GameObject objTarget;
 
     void Start()
     {
@@ -209,19 +210,17 @@ public class MapScene : MonoBehaviour
     private IEnumerator GetStreetViewImage(double latitude, double longitude, double zoom)
     {
         string url = "";
-        if (Application.platform == RuntimePlatform.IPhonePlayer) { url = "http://maps.googleapis.com/maps/api/staticmap?center=" + latitude + "," + longitude + "&zoom=" + zoom + "&size=" + width + "x" + height + Secret.SecretString.iPhoneKey; }
-        if (Application.platform == RuntimePlatform.Android) { url = "http://maps.googleapis.com/maps/api/staticmap?center=" + latitude + "," + longitude + "&zoom=" + zoom + "&size=" + width + "x" + height + Secret.SecretString.androidKey; }
-        if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer) { url = "http://maps.googleapis.com/maps/api/staticmap?center=" + latitude + "," + longitude + "&zoom=" + zoom + "&size=" + width + "x" + height + Secret.SecretString.androidKey; ; }
+ url = "https://map.yahooapis.jp/map/V1/static?" + Secret.SecretString.yahooKey + "&lat=" + latitude.ToString() + "&lon=" + longitude.ToString() + "&z=" + ((int)zoom+1).ToString() + "&width=" + width.ToString() + "&height=" + height.ToString(); 
         WWW www = new WWW(url);
         yield return www;
         //マップの画像をTextureからspriteに変換して貼り付ける
-        mapImage = Sprite.Create(www.texture, new Rect(0, 0, 640, 640), Vector2.zero);
+        mapImage = Sprite.Create(www.texture, new Rect(0, 0, 2000, 2000), Vector2.zero);
         mapImageObj.GetComponent<Image>().sprite = mapImage;
 
         //地図の中心の緯度経度を保存
         longitudeMap = longitude;
         latitudeMap = latitude;
-
+        mapImageObj.GetComponent<RectTransform>().localPosition = new Vector3(-207, 110, 10f);
         //targetの位置を中心に
         targetX = 0; targetY = 0;
     }
@@ -895,6 +894,26 @@ public class MapScene : MonoBehaviour
             }
         }
         catch { }
+    }
+
+    public void ZoomUpButton()
+    {
+        if (zoom < 18)
+        {
+            zoom++;
+            objTarget.GetComponent<RectTransform>().sizeDelta = new Vector2((float)(30*Math.Pow(2, zoom-16)),(float)( 30 * Math.Pow(2, zoom-16)));            
+            GetMap();
+        }
+    }
+
+    public void ZoomDownButton()
+    {
+        if (zoom > 3)
+        {
+            zoom--;
+            objTarget.GetComponent<RectTransform>().sizeDelta = new Vector2((float)(30 * Math.Pow(2, zoom-16)), (float)(30 * Math.Pow(2, zoom-16)));
+            GetMap();
+        }
     }
 
     public void MapPageJumpButton()
