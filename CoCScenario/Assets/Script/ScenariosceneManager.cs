@@ -882,6 +882,7 @@ public class ScenariosceneManager : MonoBehaviour
         {
             dataFolderPath=@GetComponent<Utility>().GetAppPath().Substring(0, @GetComponent<Utility>().GetAppPath().Length - 37) + @"/シナリオに使うpngやwavを入れるフォルダ";
         }
+        SafeCreateDirectory(dataFolderPath);
         graphicNum = 0; soundNum = 0;
         List<string> tmp = LoadIventData(objBGM.GetComponent<BGMManager>().chapterName);
         //ZipFileオブジェクトの作成
@@ -904,8 +905,7 @@ public class ScenariosceneManager : MonoBehaviour
         }
         catch
         {
-            SafeCreateDirectory("シナリオに使うpngやwavを入れるフォルダ");
-            //GameObject.Find("Error").GetComponent<Text>().text = "『シナリオに使うpngやwavを入れるフォルダ』がありません。";
+            GameObject.Find("Error").GetComponent<Text>().text = "『シナリオに使うpngやwavを入れるフォルダ』がありません。";
         }
         LoadCommandData("[system]command1" + objBGM.GetComponent<BGMManager>().chapterName);
     }

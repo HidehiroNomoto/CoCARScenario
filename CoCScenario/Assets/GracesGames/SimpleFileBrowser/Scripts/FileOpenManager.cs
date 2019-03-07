@@ -81,7 +81,10 @@ namespace GracesGames.SimpleFileBrowser.Scripts
                     PlayerPrefs.DeleteAll();
 
                     PlayerPrefs.SetString("進行中シナリオ",path);
-                    GameObject.Find("TitleManager").GetComponent<TitleManager>().pass2Obj.SetActive(true);
+                    if (GameObject.Find("TitleManager").GetComponent<TitleManager>().CheckPassword())
+                    {
+                        GameObject.Find("TitleManager").GetComponent<TitleManager>().pass2Obj.SetActive(true);
+                    }
                 }
             }
         }

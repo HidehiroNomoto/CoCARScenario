@@ -74,7 +74,7 @@ Application.platform == RuntimePlatform.LinuxPlayer)
         string scenarioName, scenarioPass,dataFolderPath;
         scenarioName = GameObject.Find("InputField").GetComponent<InputField>().text;
         if (scenarioName == "") { scenarioName = "NoNameScenario"; }
-        scenarioPass = GameObject.Find("InputFieldPass").GetComponent<InputField>().text;
+        scenarioPass = "";
         if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
         {
             dataFolderPath = @GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + scenarioName + ".zip";
@@ -142,6 +142,51 @@ Application.platform == RuntimePlatform.LinuxPlayer)
         //一時的に書きだした[system]mapdata.txtを消去する。
         System.IO.File.Delete(file);
         System.IO.File.Delete(file2);
+    }
+
+    public bool CheckPassword()
+    {
+        string text="";
+        try
+        {
+            //閲覧するエントリ
+            string extractFile = "[system]password[system].txt";
+
+            //ZipFileオブジェクトの作成
+            ICSharpCode.SharpZipLib.Zip.ZipFile zf =
+                new ICSharpCode.SharpZipLib.Zip.ZipFile(PlayerPrefs.GetString("進行中シナリオ", ""));
+            zf.Password = Secret.SecretString.zipPass;
+            //展開するエントリを探す
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zf.GetEntry(extractFile);
+
+            try
+            {
+                if (ze != null)
+                {
+                    //閲覧するZIPエントリのStreamを取得
+                    System.IO.Stream reader = zf.GetInputStream(ze);
+                    //文字コードを指定してStreamReaderを作成
+                    System.IO.StreamReader sr = new System.IO.StreamReader(
+                        reader, System.Text.Encoding.GetEncoding("UTF-8"));
+                    // テキストを取り出す
+                    text = sr.ReadToEnd();
+                    //閉じる
+                    sr.Close();
+                    reader.Close();
+                }
+            }
+            catch { }
+
+            //閉じる
+            zf.Close();
+        }
+        catch
+        {
+            GameObject.Find("InputFieldPass2Guide").GetComponent<Text>().text = "シナリオファイルに異常があります。";
+            return false;
+        }
+        if (text == "") { GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "MapScene");return false; }
+        return true;
     }
 
     public void PushPasswordButton()
