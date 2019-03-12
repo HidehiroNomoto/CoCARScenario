@@ -2076,7 +2076,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &275268877
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6480,7 +6480,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1037304586
 RectTransform:
   m_ObjectHideFlags: 0
@@ -9154,6 +9154,7 @@ MonoBehaviour:
   fallNum: 0
   PLIventToggle: {fileID: 1263085533}
   objTarget: {fileID: 1957709081}
+  tests: 
 --- !u!224 &1607322384
 RectTransform:
   m_ObjectHideFlags: 0
