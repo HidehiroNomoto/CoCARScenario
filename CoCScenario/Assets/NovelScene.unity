@@ -33055,6 +33055,8 @@ MonoBehaviour:
       m_Image: {fileID: 0}
     - m_Text: "\u9283"
       m_Image: {fileID: 0}
+    - m_Text: "\u546A\u6587"
+      m_Image: {fileID: 0}
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
