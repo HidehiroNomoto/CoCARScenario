@@ -882,9 +882,23 @@ public class ScenariosceneManager : MonoBehaviour
         {
             dataFolderPath = @GetComponent<Utility>().GetAppPath() + @"\シナリオに使うpngやwavを入れるフォルダ";
         }
+        else if (Application.platform == RuntimePlatform.Android)
+        {
+            string path;
+            using (AndroidJavaClass androidJavaClass = new AndroidJavaClass("android.os.Environment"))
+            {
+                path = androidJavaClass.CallStatic<AndroidJavaObject>("getExternalStorageDirectory")
+                    .Call<string>("getAbsolutePath");
+            }
+            dataFolderPath = path + "/Download";
+        }
+        else if (Application.platform == RuntimePlatform.IPhonePlayer)
+        {
+            dataFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/Documents";
+        }
         else
         {
-            dataFolderPath=@GetComponent<Utility>().GetAppPath().Substring(0, @GetComponent<Utility>().GetAppPath().Length - 37) + @"/シナリオに使うpngやwavを入れるフォルダ";
+            dataFolderPath = @GetComponent<Utility>().GetAppPath().Substring(0, @GetComponent<Utility>().GetAppPath().Length - 37) + @"/シナリオに使うpngやwavを入れるフォルダ";
         }
         SafeCreateDirectory(dataFolderPath);
         graphicNum = 0; soundNum = 0;

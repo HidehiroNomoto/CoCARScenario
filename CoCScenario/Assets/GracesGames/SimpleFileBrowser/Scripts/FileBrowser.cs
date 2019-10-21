@@ -106,21 +106,33 @@ namespace GracesGames.SimpleFileBrowser.Scripts {
 			SetupPath(startPath);
 		}
 
-		// Sets the current path (Android or other devices)
-		// If the given start path is valid, set the current path to start path
-		private void SetupPath(string startPath) {
-			if (!String.IsNullOrEmpty(startPath) && Directory.Exists(startPath)) {
-				_currentPath = startPath;
-			} else if (IsAndroidPlatform()) {
-				SetupAndroidVariables();
-				_currentPath = _rootAndroidPath;
-			} else {
-				_currentPath = Directory.GetCurrentDirectory();
-			}
-		}
+        // Sets the current path (Android or other devices)
+        // If the given start path is valid, set the current path to start path
+        private void SetupPath(string startPath)
+        {
+            if (!String.IsNullOrEmpty(startPath) && Directory.Exists(startPath))
+            {
+                _currentPath = startPath;
+            }
+            else if (IsAndroidPlatform())
+            {
+                SetupAndroidVariables();
+                _currentPath = _rootAndroidPath + "/Download";
+                if (!Directory.Exists(_currentPath)) { _currentPath = _rootAndroidPath; }
+            }
+            else if (IsIosPlatform())
+            {
+                _currentPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/Documents/Inbox";
+                if (!Directory.Exists(_currentPath)) { _currentPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/Documents"; }
+            }
+            else
+            {
+                _currentPath = Directory.GetCurrentDirectory();
+            }
+        }
 
-		// Set up Android external storage root directory, else default to Directory.GetCurrentDirectory()
-		private void SetupAndroidVariables() {
+        // Set up Android external storage root directory, else default to Directory.GetCurrentDirectory()
+        private void SetupAndroidVariables() {
 			_rootAndroidPath = GetAndroidExternalFilesDir();
 		}
 
@@ -199,18 +211,20 @@ namespace GracesGames.SimpleFileBrowser.Scripts {
 			}
 		}
 
-		// Parent directory check as Android throws a permission error if it tries to go above the root external storage directory
-		private bool IsTopLevelReached() {
-			if (IsAndroidPlatform()) {
-				return Directory.GetParent(_currentPath).FullName == Directory.GetParent(_rootAndroidPath).FullName;
-			}
+        // Parent directory check as Android throws a permission error if it tries to go above the root external storage directory
+        private bool IsTopLevelReached()
+        {
+            if (IsAndroidPlatform())
+            {
+                return Directory.GetParent(_currentPath).FullName == Directory.GetParent(_rootAndroidPath).FullName;
+            }
+            if (IsIosPlatform()) { return Directory.GetParent(_currentPath).FullName == Directory.GetParent(Environment.GetFolderPath(Environment.SpecialFolder.Personal)).FullName; }
+            return Directory.GetParent(_currentPath) == null;
+        }
 
-			return Directory.GetParent(_currentPath) == null;
-		}
-
-		// Sends event on file browser close
-		// Then destroys the file browser
-		public void CloseFileBrowser() {
+        // Sends event on file browser close
+        // Then destroys the file browser
+        public void CloseFileBrowser() {
 			OnFileBrowserClose();
 			Destroy();
 		}
@@ -270,21 +284,32 @@ namespace GracesGames.SimpleFileBrowser.Scripts {
 			_uiScript.UpdateLoadFileText(_currentFile);
 		}
 
-		// Creates a DirectoryButton for each directory in the current path
-		private void BuildDirectories(bool topLevel) {
-			// Get the directories
-			string[] directories = Directory.GetDirectories(_currentPath);
-			// If the top level is reached return the drives
-			if (topLevel) {
-				if (IsWindowsPlatform()) {
-					directories = Directory.GetLogicalDrives();
-				} else if (IsMacOsPlatform()) {
-					directories = Directory.GetDirectories("/Volumes");
-				} else if (IsAndroidPlatform()) {
-					_currentPath = _rootAndroidPath;
-					directories = Directory.GetDirectories(_currentPath);
-				}
-			}
+        // Creates a DirectoryButton for each directory in the current path
+        private void BuildDirectories(bool topLevel)
+        {
+            // Get the directories
+            string[] directories = Directory.GetDirectories(_currentPath);
+            // If the top level is reached return the drives
+            if (topLevel)
+            {
+                if (IsWindowsPlatform())
+                {
+                    directories = Directory.GetLogicalDrives();
+                }
+                else if (IsMacOsPlatform())
+                {
+                    directories = Directory.GetDirectories("/Volumes");
+                }
+                else if (IsAndroidPlatform())
+                {
+                    _currentPath = _rootAndroidPath;
+                    directories = Directory.GetDirectories(_currentPath);
+                }
+                else if (IsIosPlatform())
+                {
+                    directories = Directory.GetDirectories(Environment.GetFolderPath(Environment.SpecialFolder.Personal));
+                }
+            }
 
 
             // Apply Alphanumeric sort to directories
@@ -314,8 +339,13 @@ namespace GracesGames.SimpleFileBrowser.Scripts {
 			        Application.platform == RuntimePlatform.OSXPlayer);
 		}
 
-		// Creates a FileButton for each file in the current path
-		private void BuildFiles() {
+        private bool IsIosPlatform()
+        {
+            return (Application.platform == RuntimePlatform.IPhonePlayer);
+        }
+
+        // Creates a FileButton for each file in the current path
+        private void BuildFiles() {
 			// Get the files
 			string[] files = Directory.GetFiles(_currentPath);
 			// Apply search filter when not empty

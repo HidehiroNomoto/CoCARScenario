@@ -130,6 +130,14 @@ public class Utility : MonoBehaviour {
     public string GetAppPath()
     {
         if (Application.platform == RuntimePlatform.WindowsEditor) { return @"C:\Users\hoto\Documents\GitHub\CoCARScenario\CoCScenario";}
+        if (Application.platform == RuntimePlatform.Android) {
+            string path;
+            using (AndroidJavaClass androidJavaClass = new AndroidJavaClass("android.os.Environment"))
+            {
+                path = androidJavaClass.CallStatic<AndroidJavaObject>("getExternalStorageDirectory")
+                    .Call<string>("getAbsolutePath") + "/Download";
+            }
+            return path; }
         return System.Windows.Forms.Application.StartupPath;
     }
 

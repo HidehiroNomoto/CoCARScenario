@@ -79,6 +79,20 @@ Application.platform == RuntimePlatform.LinuxPlayer)
         {
             dataFolderPath = @GetComponent<Utility>().GetAppPath() + objBGM.GetComponent<BGMManager>().folderChar + scenarioName + ".zip";
         }
+        else if (Application.platform == RuntimePlatform.Android)
+        {
+            string path;
+            using (AndroidJavaClass androidJavaClass = new AndroidJavaClass("android.os.Environment"))
+            {
+                path = androidJavaClass.CallStatic<AndroidJavaObject>("getExternalStorageDirectory")
+                    .Call<string>("getAbsolutePath");
+            }
+            dataFolderPath = path + "/Download/" + scenarioName + ".zip";
+        }
+        else if (Application.platform == RuntimePlatform.IPhonePlayer)
+        {
+            dataFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/Documents/" + scenarioName + ".zip";
+        }
         else
         {
             dataFolderPath = @GetComponent<Utility>().GetAppPath().Substring(0, @GetComponent<Utility>().GetAppPath().Length - 37) + objBGM.GetComponent<BGMManager>().folderChar + scenarioName + ".zip";
