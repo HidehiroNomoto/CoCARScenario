@@ -124,7 +124,7 @@ Application.platform == RuntimePlatform.LinuxPlayer)
 
     public void PushJumpButton()
     {
-        Application.OpenURL("http://www1366uj.sakura.ne.jp/public_html/scenario/upload/upload.cgi");
+        Application.OpenURL("https://wp026.wappy.ne.jp/brainmixer.net/CoCAR/scenario/upload.cgi");
     }
 
     private void ZipMake(string scenarioName,string scenarioPass)
