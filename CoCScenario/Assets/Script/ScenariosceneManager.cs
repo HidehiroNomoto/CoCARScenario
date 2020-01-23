@@ -1805,14 +1805,14 @@ public class ScenariosceneManager : MonoBehaviour
             text = reg.Replace(text, tmpstr);
             match = match.NextMatch();
         }
-        backtext[1] = text.Replace(" ", " ");
+        backtext[1] = text.Replace(" ", "\u00A0");
         if (name == "[PC]" || name == "<PC>")
         {
-            backtext[0] = yourName.Replace(" ", " ");
+            backtext[0] = yourName.Replace(" ", "\u00A0");
         }
         else
         {
-            backtext[0] = name.Replace(" ", " ");
+            backtext[0] = name.Replace(" ", "\u00A0");
         }
         return backtext;
     }
