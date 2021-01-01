@@ -51,7 +51,7 @@ public class MapDrag : MonoBehaviour
         TapPos.z = 10f;
         map.GetComponent<RectTransform>().localPosition = startMapLocalPosition + TapPos - startPos;
         m1.longitude-=(TapPos.x - startPos.x)/ (2.05993652344*zoomPow*Math.Cos(m1.latitude * (Math.PI / 180)));
-        m1.latitude -= (TapPos.y - startPos.y) /( 2.05993652344 * zoomPow);
+        m1.latitude -= (TapPos.y - startPos.y)/( 2.05993652344 * zoomPow);
         while (m1.longitude >= 180) { m1.longitude -= 360; }
         while (m1.longitude < -180) { m1.longitude +=360; }
         //緯度経度を計算(latitudeとlongitudeに代入)
@@ -59,13 +59,12 @@ public class MapDrag : MonoBehaviour
         //        targetY = (float)((latitude - latitudeMap) * 2.05993652344 * zoomPow);
         //緯度経度をインプットフィールドに入力
         if (m1.selectNum==0) { longitudeInput =GameObject.Find("InputFieldB");latitudeInput = GameObject.Find("InputFieldA"); } else { longitudeInput = GameObject.Find("InputField2"); latitudeInput = GameObject.Find("InputField1"); }
+        if(longitudeInput!=null){
         longitudeInput.GetComponent<InputField>().text= m1.longitude.ToString();
         latitudeInput.GetComponent<InputField>().text = m1.latitude.ToString();
-        if (map.GetComponent<RectTransform>().localPosition.x > 630 || map.GetComponent<RectTransform>().localPosition.x < -1040 || map.GetComponent<RectTransform>().localPosition.y < -720 || map.GetComponent<RectTransform>().localPosition.y > 940)
-        {
+        }
             //マップ範囲外になりそうなら再読み込み
             m1.GetMap();
-        }
     }
 
 

@@ -9,8 +9,8 @@ public class MapScene : MonoBehaviour
 {
     Sprite mapImage;
     private float intervalTime = 0.0f;
-    private int width = 2000;
-    private int height = 2000;
+    private int width = 640;
+    private int height = 640;
     public double longitude;
     public double latitude;
     private double longitudeMap;
@@ -214,11 +214,11 @@ public class MapScene : MonoBehaviour
         string url = "";
         if (Application.platform == RuntimePlatform.IPhonePlayer) { url = "http://maps.googleapis.com/maps/api/staticmap?center=" + latitude + "," + longitude + "&zoom=" + zoom + "&size=" + width + "x" + height + Secret.SecretString.iPhoneKey; }
         if (Application.platform == RuntimePlatform.Android) { url = "http://maps.googleapis.com/maps/api/staticmap?center=" + latitude + "," + longitude + "&zoom=" + zoom + "&size=" + width + "x" + height + Secret.SecretString.androidKey; }
-        if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer) { url = "http://maps.googleapis.com/maps/api/staticmap?center=" + latitude + "," + longitude + "&zoom=" + zoom + "&size=" + width + "x" + height + Secret.SecretString.androidKey; ; }
+        if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer) { url = "http://maps.googleapis.com/maps/api/staticmap?center=" + latitude + "," + longitude + "&zoom=" + zoom + "&size=" + width + "x" + height + Secret.SecretString.PCKey; ; }
         WWW www = new WWW(url);
         yield return www;
         //マップの画像をTextureからspriteに変換して貼り付ける
-        mapImage = Sprite.Create(www.texture, new Rect(0, 0, 2000, 2000), Vector2.zero);
+        mapImage = Sprite.Create(www.texture, new Rect(0, 0, 640, 640), Vector2.zero);
         mapImageObj.GetComponent<Image>().sprite = mapImage;
 
         //地図の中心の緯度経度を保存
